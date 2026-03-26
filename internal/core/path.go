@@ -98,6 +98,7 @@ type path struct {
 	onlineTime                     time.Time
 	onUnDemandHook                 func(string)
 	onNotReadyHook                 func()
+	onSourceDisconnectHook         func()
 	readers                        map[defs.Reader]struct{}
 	describeRequestsOnHold         []defs.PathDescribeReq
 	readerAddRequestsOnHold        []defs.PathAddReaderReq
@@ -252,6 +253,11 @@ func (pa *path) run() {
 		} else if source, ok2 := pa.source.(defs.Publisher); ok2 {
 			source.Close()
 		}
+	}
+
+	if pa.onSourceDisconnectHook != nil {
+		pa.onSourceDisconnectHook()
+		pa.onSourceDisconnectHook = nil
 	}
 
 	if pa.onUnDemandHook != nil {
@@ -449,9 +455,22 @@ func (pa *path) doSourceStaticSetReady(req defs.PathSourceStaticSetReadyReq) {
 	pa.consumeOnHoldRequests()
 
 	req.Res <- defs.PathSourceStaticSetReadyRes{SubStream: subStream}
+
+	pa.onSourceDisconnectHook = hooks.OnSourceConnect(hooks.OnSourceConnectParams{
+		Logger:          pa,
+		ExternalCmdPool: pa.externalCmdPool,
+		Conf:            pa.conf,
+		ExternalCmdEnv:  pa.ExternalCmdEnv(),
+		Desc:            pa.source.APISourceDescribe(),
+	})
 }
 
 func (pa *path) doSourceStaticSetNotReady(req defs.PathSourceStaticSetNotReadyReq) {
+	if pa.onSourceDisconnectHook != nil {
+		pa.onSourceDisconnectHook()
+		pa.onSourceDisconnectHook = nil
+	}
+
 	if !pa.conf.AlwaysAvailable {
 		pa.setNotAvailable()
 	} else {

@@ -307,6 +307,9 @@ type Path struct {
 	RunOnReady                 string   `json:"runOnReady"`
 	RunOnReadyRestart          bool     `json:"runOnReadyRestart"`
 	RunOnNotReady              string   `json:"runOnNotReady"`
+	RunOnSourceConnect         string   `json:"runOnSourceConnect"`
+	RunOnSourceConnectRestart  bool     `json:"runOnSourceConnectRestart"`
+	RunOnSourceDisconnect      string   `json:"runOnSourceDisconnect"`
 	RunOnRead                  string   `json:"runOnRead"`
 	RunOnReadRestart           bool     `json:"runOnReadRestart"`
 	RunOnUnread                string   `json:"runOnUnread"`

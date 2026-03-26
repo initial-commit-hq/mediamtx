@@ -1,0 +1,75 @@
+{
+  "scripts": {
+    "dev": "PORT=3000 node serve.mjs ",
+    "start": "electron .",
+    "build": "electron-builder",
+    "dist": "electron-builder --linux --win --mac",
+    "postinstall": "electron-builder install-app-deps",
+    "package": "electron-builder --dir",
+    "publish": "electron-builder --publish=always",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "test": "jest",
+    "prebuild": "pnpm run lint && pnpm test",
+    "postbuild": "echo Build completed successfully!",
+    "clean": "rm -rf dist build node_modules",
+    "prepare": "husky install",
+    "prepublishOnly": "pnpm run build"
+  },
+  "devDependencies": {
+    "electron": "^25.0.0",
+    "electron-builder": "^24.0.0"
+  },
+  "build": {
+    "appId": "com.example.myapp",
+    "productName": "MyApp",
+    "files": [
+      "**/*"
+    ],
+    "directories": {
+      "buildResources": "assets"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "linux": {
+      "target": "AppImage",
+      "category": "Utility",
+      "icon": "assets/icon.png",
+      "desktop": {
+        "Name": "MyApp",
+        "Comment": "A cross-platform desktop application",
+        "Exec": "myapp",
+        "Icon": "myapp"
+      },
+      "mimeTypes": [
+        "application/x-myapp"
+      ],
+      "fileAssociations": [
+        {
+          "ext": "myapp",
+          "name": "MyApp File",
+          "description": "A file associated with MyApp"
+        }
+      ],
+      "extraResources": [
+        {
+          "from": "assets/",
+          "to": "assets",
+          "filter": [
+            "**/*"
+          ]
+        }
+      ],
+      "publish": [
+        {
+          "provider": "github",
+          "owner": "your-github-username",
+          "repo": "your-repo-name"
+        }
+      ]
+    }
+  }
+}
