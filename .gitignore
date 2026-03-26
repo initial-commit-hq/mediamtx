@@ -16,6 +16,7 @@ hooks/
 node_modules/
 dist/
 build/
+artifacts/
 
 bun.lock
 package-lock.json

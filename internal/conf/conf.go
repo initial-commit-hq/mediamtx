@@ -272,6 +272,10 @@ type Conf struct {
 	AuthJWTIssuer             string                       `json:"authJWTIssuer"`
 	AuthJWTAudience           string                       `json:"authJWTAudience"`
 
+	// Viewer
+	Viewer        bool   `json:"viewer"`
+	ViewerAddress string `json:"viewerAddress"`
+
 	// Control API
 	API               bool       `json:"api"`
 	APIAddress        string     `json:"apiAddress"`
@@ -438,6 +442,9 @@ func (conf *Conf) setDefaults() {
 	}
 	conf.AuthJWTClaimKey = "mediamtx_permissions"
 	conf.AuthJWTInHTTPQuery = true
+
+	// Viewer
+	conf.ViewerAddress = ":9999"
 
 	// Control API
 	conf.APIAddress = ":9997"

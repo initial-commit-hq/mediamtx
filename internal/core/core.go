@@ -35,6 +35,7 @@ import (
 	"github.com/bluenviron/mediamtx/internal/servers/rtsp"
 	"github.com/bluenviron/mediamtx/internal/servers/srt"
 	"github.com/bluenviron/mediamtx/internal/servers/webrtc"
+	"github.com/bluenviron/mediamtx/internal/viewerserver"
 )
 
 //go:generate go run ./versiongetter
@@ -124,6 +125,7 @@ type Core struct {
 	webRTCServer    *webrtc.Server
 	srtServer       *srt.Server
 	api             *api.API
+	viewerServer    *viewerserver.Server
 	confWatcher     *confwatcher.ConfWatcher
 
 	// in
@@ -710,6 +712,18 @@ func (p *Core) createResources(initial bool) error {
 		p.api = i
 	}
 
+	if p.conf.Viewer && p.viewerServer == nil {
+		i := &viewerserver.Server{
+			Address: p.conf.ViewerAddress,
+			Parent:  p,
+		}
+		err = i.Initialize()
+		if err != nil {
+			return err
+		}
+		p.viewerServer = i
+	}
+
 	if initial && p.confPath != "" {
 		cf := &confwatcher.ConfWatcher{FilePath: p.confPath}
 		err = cf.Initialize()
@@ -988,6 +1002,11 @@ func (p *Core) closeResources(newConf *conf.Conf, calledByAPI bool) {
 		} else if !calledByAPI { // avoid a loop
 			p.api.ReloadConf(newConf)
 		}
+	}
+
+	if newConf == nil && p.viewerServer != nil {
+		p.viewerServer.Close()
+		p.viewerServer = nil
 	}
 
 	if closeSRTServer && p.srtServer != nil {

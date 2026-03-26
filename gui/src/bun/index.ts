@@ -32,6 +32,11 @@ const mainWindow = new BrowserWindow({
 		x: 200,
 		y: 200,
 	},
+    webPreferences: {
+        allowRunningInsecureContent: true, // Allows HTTP from HTTPS
+        nodeIntegration: false,
+        contextIsolation: true
+    }
 });
 
 console.debug("mainWindow:" + mainWindow);
