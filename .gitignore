@@ -8,6 +8,8 @@
 
 .vscode/
 .idea/
+.cache/
+.claude
 media/
 logs/
 hooks/
@@ -19,4 +21,3 @@ hooks/
 *.dev.yml
 
 /mediamtx
-
