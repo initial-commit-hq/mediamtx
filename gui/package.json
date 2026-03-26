@@ -1,75 +1,25 @@
 {
-  "scripts": {
-    "dev": "PORT=3000 node serve.mjs ",
-    "start": "electron .",
-    "build": "electron-builder",
-    "dist": "electron-builder --linux --win --mac",
-    "postinstall": "electron-builder install-app-deps",
-    "package": "electron-builder --dir",
-    "publish": "electron-builder --publish=always",
-    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
-    "test": "jest",
-    "prebuild": "pnpm run lint && pnpm test",
-    "postbuild": "echo Build completed successfully!",
-    "clean": "rm -rf dist build node_modules",
-    "prepare": "husky install",
-    "prepublishOnly": "pnpm run build"
-  },
-  "devDependencies": {
-    "electron": "^25.0.0",
-    "electron-builder": "^24.0.0"
-  },
-  "build": {
-    "appId": "com.example.myapp",
-    "productName": "MyApp",
-    "files": [
-      "**/*"
-    ],
-    "directories": {
-      "buildResources": "assets"
-    },
-    "win": {
-      "target": "nsis"
-    },
-    "mac": {
-      "target": "dmg"
-    },
-    "linux": {
-      "target": "AppImage",
-      "category": "Utility",
-      "icon": "assets/icon.png",
-      "desktop": {
-        "Name": "MyApp",
-        "Comment": "A cross-platform desktop application",
-        "Exec": "myapp",
-        "Icon": "myapp"
-      },
-      "mimeTypes": [
-        "application/x-myapp"
-      ],
-      "fileAssociations": [
-        {
-          "ext": "myapp",
-          "name": "MyApp File",
-          "description": "A file associated with MyApp"
-        }
-      ],
-      "extraResources": [
-        {
-          "from": "assets/",
-          "to": "assets",
-          "filter": [
-            "**/*"
-          ]
-        }
-      ],
-      "publish": [
-        {
-          "provider": "github",
-          "owner": "your-github-username",
-          "repo": "your-repo-name"
-        }
-      ]
-    }
-  }
+	"name": "mediamtx",
+	"version": "1.0.0",
+	"type": "module",
+	"description": "Electrobun app with Vue and Vite HMR",
+	"scripts": {
+		"start": "vite build && electrobun dev",
+		"dev": "electrobun dev --watch",
+		"dev:hmr": "concurrently \"bun run hmr\" \"bun run start\"",
+		"hmr": "vite --port 5173",
+		"build:canary": "vite build && electrobun build --env=canary"
+	},
+	"dependencies": {
+		"electrobun": "1.16.0"
+	},
+	"devDependencies": {
+		"@types/bun": "latest",
+		"@vitejs/plugin-vue": "^5.2.1",
+		"concurrently": "^9.1.0",
+		"typescript": "^5.7.2",
+		"vite": "^6.0.3",
+		"vue": "^3.5.13",
+		"vue-tsc": "^2.2.0"
+	}
 }
