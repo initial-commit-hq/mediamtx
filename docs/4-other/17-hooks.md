@@ -111,6 +111,37 @@ pathDefaults:
   runOnNotReady: curl http://my-custom-server/webhook?path=$MTX_PATH&source_type=$MTX_SOURCE_TYPE&source_id=$MTX_SOURCE_ID
 ```
 
+## runOnSourceConnect
+
+`runOnSourceConnect` allows to run a command when a source connects to a path (i.e. a publisher starts streaming):
+
+```yml
+pathDefaults:
+  # Command to run when a source connects to this path.
+  # This is terminated with SIGINT when the source disconnects.
+  # The following environment variables are available:
+  # * MTX_PATH: path name
+  # * MTX_SOURCE_TYPE: source type
+  # * MTX_SOURCE_ID: source ID
+  # * RTSP_PORT: RTSP server port
+  # * G1, G2, ...: regular expression groups, if path name is
+  #   a regular expression.
+  runOnSourceConnect: curl http://my-custom-server/webhook?path=$MTX_PATH&source_type=$MTX_SOURCE_TYPE&source_id=$MTX_SOURCE_ID
+  # Restart the command if it exits.
+  runOnSourceConnectRestart: no
+```
+
+## runOnSourceDisconnect
+
+`runOnSourceDisconnect` allows to run a command when a source disconnects from a path:
+
+```yml
+pathDefaults:
+  # Command to run when a source disconnects from this path.
+  # Environment variables are the same as runOnSourceConnect.
+  runOnSourceDisconnect: curl http://my-custom-server/webhook?path=$MTX_PATH&source_type=$MTX_SOURCE_TYPE&source_id=$MTX_SOURCE_ID
+```
+
 ## runOnRead
 
 `runOnRead` allows to run a command when a client starts reading:

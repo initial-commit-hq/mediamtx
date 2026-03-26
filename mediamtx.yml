@@ -161,6 +161,11 @@ authJWTAudience:
 ###############################################
 # Global settings -> Control API
 
+# Enable the built-in camera grid viewer (served on viewerAddress).
+viewer: false
+# Address of the viewer listener.
+viewerAddress: :9999
+
 # Allow clients to control the server through the Control API.
 api: false
 # Address of the Control API listener.
@@ -750,6 +755,22 @@ pathDefaults:
   # Command to run when the stream is not available anymore.
   # Environment variables are the same as runOnReady.
   runOnNotReady:
+
+  # Command to run when a source connects to this path (i.e. a publisher starts streaming).
+  # This is terminated with SIGINT when the source disconnects.
+  # The following environment variables are available:
+  # * MTX_PATH: path name
+  # * MTX_SOURCE_TYPE: source type
+  # * MTX_SOURCE_ID: source ID
+  # * RTSP_PORT: RTSP server port
+  # * G1, G2, ...: regular expression groups, if path name is
+  #   a regular expression.
+  runOnSourceConnect:
+  # Restart the command if it exits.
+  runOnSourceConnectRestart: false
+  # Command to run when a source disconnects from this path.
+  # Environment variables are the same as runOnSourceConnect.
+  runOnSourceDisconnect:
 
   # Command to run when a client starts reading.
   # This is terminated with SIGINT when a client stops reading.
