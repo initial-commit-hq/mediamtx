@@ -1,17 +1,17 @@
+import { fileURLToPath } from 'node:url'
+import { dirname, resolve } from 'node:path'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   ssr: false,
 
-  // Output static files to internal/viewerserver/dist/ so Go can embed them
-  // (go:embed paths are relative to the package directory, not the repo root)
-  generate: {
-    dir: '../internal/viewerserver/dist',
-  },
-
-  // Belt-and-suspenders: also tell Nitro where the public dir lives
+  // Output static files directly to internal/viewerserver/dist/ for Go binary embedding.
+  // Using an absolute path avoids ambiguity in Nitro's relative-path resolution.
   nitro: {
     output: {
-      publicDir: '../../internal/viewerserver/dist',
+      publicDir: resolve(__dirname, '../internal/viewerserver/dist'),
     },
   },
 
