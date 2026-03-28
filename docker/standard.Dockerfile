@@ -22,7 +22,8 @@ RUN ARCH=$(dpkg --print-architecture) && \
         armel)   GRPCURL_ARCH="linux_armv6" ;; \
         *) echo "Unsupported arch: $ARCH" && exit 1 ;; \
     esac && \
-    curl -sSL "https://github.com/fullstorydev/grpcurl/releases/latest/download/grpcurl_${GRPCURL_ARCH}.tar.gz" \
+    VERSION=$(curl -sSLI -o /dev/null -w '%{url_effective}' https://github.com/fullstorydev/grpcurl/releases/latest | sed 's|.*/v||') && \
+    curl -sSL "https://github.com/fullstorydev/grpcurl/releases/download/v${VERSION}/grpcurl_${VERSION}_${GRPCURL_ARCH}.tar.gz" \
     | tar -xz -C /usr/local/bin grpcurl
 
 RUN curl --version
