@@ -2,20 +2,24 @@
 package viewerserver
 
 import (
-	_ "embed"
+	"embed"
+	"io/fs"
 	"net/http"
+	"strings"
 
 	"github.com/bluenviron/mediamtx/internal/logger"
 )
 
-//go:embed viewer.html
-var viewerHTML []byte
+// all: is required so Go includes _nuxt/ (leading underscore would be skipped otherwise).
+//
+//go:embed all:dist
+var distFS embed.FS
 
 type parent interface {
 	logger.Writer
 }
 
-// Server is the camera grid viewer server.
+// Server is the camera grid viewer HTTP server.
 type Server struct {
 	Address string
 	Parent  parent
@@ -25,10 +29,31 @@ type Server struct {
 
 // Initialize initializes Server.
 func (s *Server) Initialize() error {
+	// Strip the "dist" prefix so URLs map directly to "/" instead of "/dist/".
+	sub, err := fs.Sub(distFS, "dist")
+	if err != nil {
+		return err
+	}
+
+	fileServer := http.FileServer(http.FS(sub))
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.Write(viewerHTML) //nolint:errcheck
+		path := strings.TrimPrefix(r.URL.Path, "/")
+
+		// Serve index.html for the root and any path that has no matching file
+		// (Nuxt SPA router handles the route client-side).
+		if path == "" {
+			fileServer.ServeHTTP(w, r)
+			return
+		}
+
+		if _, err := fs.Stat(sub, path); err != nil {
+			http.ServeFileFS(w, r, sub, "index.html") //nolint:errcheck
+			return
+		}
+
+		fileServer.ServeHTTP(w, r)
 	})
 
 	s.httpServer = &http.Server{
