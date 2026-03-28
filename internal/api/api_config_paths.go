@@ -88,6 +88,7 @@ func (a *API) onConfigPathsAdd(ctx *gin.Context) { //nolint:dupl
 
 	a.Conf = newConf
 	a.Parent.APIConfigSet(newConf)
+	a.saveConf(newConf)
 
 	a.writeOK(ctx)
 }
@@ -129,6 +130,7 @@ func (a *API) onConfigPathsPatch(ctx *gin.Context) { //nolint:dupl
 
 	a.Conf = newConf
 	a.Parent.APIConfigSet(newConf)
+	a.saveConf(newConf)
 
 	a.writeOK(ctx)
 }
@@ -170,6 +172,7 @@ func (a *API) onConfigPathsReplace(ctx *gin.Context) { //nolint:dupl
 
 	a.Conf = newConf
 	a.Parent.APIConfigSet(newConf)
+	a.saveConf(newConf)
 
 	a.writeOK(ctx)
 }
@@ -204,6 +207,7 @@ func (a *API) onConfigPathsDelete(ctx *gin.Context) {
 
 	a.Conf = newConf
 	a.Parent.APIConfigSet(newConf)
+	a.saveConf(newConf)
 
 	a.writeOK(ctx)
 }

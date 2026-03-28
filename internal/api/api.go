@@ -58,6 +58,7 @@ type API struct {
 	Version        string
 	Started        time.Time
 	Address        string
+	ConfPath       string
 	DumpPackets    bool
 	Encryption     bool
 	ServerKey      string
@@ -208,6 +209,17 @@ func (a *API) writeError(ctx *gin.Context, status int, err error) {
 
 func (a *API) writeOK(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, &defs.APIOK{Status: defs.APIOKStatusOK})
+}
+
+// saveConf persists the current in-memory configuration to disk.
+// It is a best-effort call: errors are logged but not returned to the caller.
+func (a *API) saveConf(c *conf.Conf) {
+	if a.ConfPath == "" {
+		return
+	}
+	if err := c.Save(a.ConfPath); err != nil {
+		a.Log(logger.Error, "failed to save config: %v", err)
+	}
 }
 
 func (a *API) middlewarePreflightRequests(ctx *gin.Context) {

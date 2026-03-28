@@ -685,6 +685,7 @@ func (p *Core) createResources(initial bool) error {
 			Version:        string(version),
 			Started:        started,
 			Address:        p.conf.APIAddress,
+			ConfPath:       p.confPath,
 			DumpPackets:    p.conf.DumpPackets,
 			Encryption:     p.conf.APIEncryption,
 			ServerKey:      p.conf.APIServerKey,

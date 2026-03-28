@@ -2,6 +2,7 @@
 package conf
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
@@ -601,6 +602,16 @@ func (conf *Conf) loadFromFile(fpath string, defaultConfPaths []string) (string,
 	}
 
 	return fpath, nil
+}
+
+// Save writes the current configuration to fpath as indented JSON.
+// JSON is valid YAML 1.2, so the file is re-loadable by the standard loader.
+func (conf *Conf) Save(fpath string) error {
+	byts, err := json.MarshalIndent(conf, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(fpath, byts, 0o644)
 }
 
 // Clone clones the configuration.
