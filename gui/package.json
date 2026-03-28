@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "nuxt dev --port 3001",
+    "dev": "nuxt dev --port 9990",
     "build": "nuxt generate",
     "preview": "pnpm dlx serve dist"
   },
