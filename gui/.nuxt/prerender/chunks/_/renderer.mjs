@@ -51,7 +51,7 @@ function createHead(options = {}) {
   return head;
 }
 
-const appHead = {"meta":[{"charset":"utf-8"},{"name":"viewport","content":"width=device-width, initial-scale=1.0"}],"link":[],"style":[],"script":[],"noscript":[],"title":"Camera Grid — MediaMTX"};
+const appHead = {"meta":[{"charset":"utf-8"},{"name":"viewport","content":"width=device-width, initial-scale=1.0"}],"link":[],"style":[],"script":[],"noscript":[],"title":"MediaMTX"};
 
 const appRootTag = "div";
 

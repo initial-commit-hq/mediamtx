@@ -9,13 +9,17 @@
 .vscode/
 .idea/
 .cache/
-.claude
+.claude/
+.zed/
+
 media/
 logs/
 hooks/
 node_modules/
 dist/
-# Keep the Go-embedded SPA placeholder so the binary can compile before a Nuxt build
+
+# Keep the Go-embedded SPA placeholder
+# so the binary can compile before a Nuxt build
 !internal/viewerserver/dist/
 !internal/viewerserver/dist/index.html
 build/
