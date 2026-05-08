@@ -8,7 +8,7 @@ services:
       - "9997:9997"
       - "8554:8554"
       - "8888:8888"
-      - "8889:8889"
+      - "8899:8899"
     volumes:
       - ./mediamtx.yml:/mediamtx.yml
       - ./hooks:/hooks

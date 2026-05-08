@@ -328,7 +328,7 @@ rtmpServerCert: server.crt
 # Allow clients to read streams with the HLS protocol.
 hls: true
 # Address of the HLS listener.
-hlsAddress: :8888
+hlsAddress: :8899
 # Enable HTTPS on the HLS server.
 # This is required for Low-Latency HLS to function correctly on Apple devices.
 hlsEncryption: false
