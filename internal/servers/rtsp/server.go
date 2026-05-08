@@ -440,7 +440,7 @@ func (s *Server) APIConnsList() (*defs.APIRTSPConnsList, error) {
 }
 
 // APIConnsGet is called by api.
-func (s *Server) APIConnsGet(uuid uuid.UUID) (*defs.APIRTSPConn, error) {
+func (s *Server) APIConnsGet(_uuid uuid.UUID) (*defs.APIRTSPConn, error) {
 	select {
 	case <-s.ctx.Done():
 		return nil, fmt.Errorf("terminated")
@@ -450,7 +450,7 @@ func (s *Server) APIConnsGet(uuid uuid.UUID) (*defs.APIRTSPConn, error) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
-	conn := s.findConnByUUID(uuid)
+	conn := s.findConnByUUID(_uuid)
 	if conn == nil {
 		return nil, ErrConnNotFound
 	}
@@ -485,7 +485,7 @@ func (s *Server) APISessionsList() (*defs.APIRTSPSessionList, error) {
 }
 
 // APISessionsGet is called by api.
-func (s *Server) APISessionsGet(uuid uuid.UUID) (*defs.APIRTSPSession, error) {
+func (s *Server) APISessionsGet(_uuid uuid.UUID) (*defs.APIRTSPSession, error) {
 	select {
 	case <-s.ctx.Done():
 		return nil, fmt.Errorf("terminated")
@@ -495,7 +495,7 @@ func (s *Server) APISessionsGet(uuid uuid.UUID) (*defs.APIRTSPSession, error) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
-	_, sx := s.findSessionByUUID(uuid)
+	_, sx := s.findSessionByUUID(_uuid)
 	if sx == nil {
 		return nil, ErrSessionNotFound
 	}
@@ -504,7 +504,7 @@ func (s *Server) APISessionsGet(uuid uuid.UUID) (*defs.APIRTSPSession, error) {
 }
 
 // APISessionsKick is called by api.
-func (s *Server) APISessionsKick(uuid uuid.UUID) error {
+func (s *Server) APISessionsKick(_uuid uuid.UUID) error {
 	select {
 	case <-s.ctx.Done():
 		return fmt.Errorf("terminated")
@@ -514,7 +514,7 @@ func (s *Server) APISessionsKick(uuid uuid.UUID) error {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
-	key, sx := s.findSessionByUUID(uuid)
+	key, sx := s.findSessionByUUID(_uuid)
 	if sx == nil {
 		return ErrSessionNotFound
 	}

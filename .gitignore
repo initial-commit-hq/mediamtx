@@ -35,5 +35,6 @@ pnpm-lock.yaml
 *.tmp
 *.iml
 *.dev.yml
+*.dev.json
 
 /mediamtx

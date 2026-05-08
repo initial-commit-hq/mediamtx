@@ -1,9 +1,9 @@
 {
-  "_hash": "4oQmPLp6tvaGii12bCD7Wo9tvYLDYfNmlcZCfSl6YDc",
+  "_hash": "A788LxOM1ya2M7Uy1S6OrxRlJts8qULXkKOxEBjtoo0",
   "project": {
     "rootDir": "/Users/pj/Projects/go/src/mediamtx/gui"
   },
   "versions": {
-    "nuxt": "3.16.2"
+    "nuxt": "3.21.4"
   }
 }

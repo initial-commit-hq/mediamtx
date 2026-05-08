@@ -4,9 +4,10 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/bluenviron/mediamtx/internal/servers/rtmp"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+
+	"github.com/bluenviron/mediamtx/internal/servers/rtmp"
 )
 
 func (a *API) onRTMPConnsList(ctx *gin.Context) {
@@ -28,13 +29,13 @@ func (a *API) onRTMPConnsList(ctx *gin.Context) {
 }
 
 func (a *API) onRTMPConnsGet(ctx *gin.Context) {
-	uuid, err := uuid.Parse(ctx.Param("id"))
+	_uuid, err := uuid.Parse(ctx.Param("id"))
 	if err != nil {
 		a.writeError(ctx, http.StatusBadRequest, err)
 		return
 	}
 
-	data, err := a.RTMPServer.APIConnsGet(uuid)
+	data, err := a.RTMPServer.APIConnsGet(_uuid)
 	if err != nil {
 		if errors.Is(err, rtmp.ErrConnNotFound) {
 			a.writeError(ctx, http.StatusNotFound, err)
@@ -48,13 +49,13 @@ func (a *API) onRTMPConnsGet(ctx *gin.Context) {
 }
 
 func (a *API) onRTMPConnsKick(ctx *gin.Context) {
-	uuid, err := uuid.Parse(ctx.Param("id"))
+	_uuid, err := uuid.Parse(ctx.Param("id"))
 	if err != nil {
 		a.writeError(ctx, http.StatusBadRequest, err)
 		return
 	}
 
-	err = a.RTMPServer.APIConnsKick(uuid)
+	err = a.RTMPServer.APIConnsKick(_uuid)
 	if err != nil {
 		if errors.Is(err, rtmp.ErrConnNotFound) {
 			a.writeError(ctx, http.StatusNotFound, err)
@@ -86,13 +87,13 @@ func (a *API) onRTMPSConnsList(ctx *gin.Context) {
 }
 
 func (a *API) onRTMPSConnsGet(ctx *gin.Context) {
-	uuid, err := uuid.Parse(ctx.Param("id"))
+	_uuid, err := uuid.Parse(ctx.Param("id"))
 	if err != nil {
 		a.writeError(ctx, http.StatusBadRequest, err)
 		return
 	}
 
-	data, err := a.RTMPSServer.APIConnsGet(uuid)
+	data, err := a.RTMPSServer.APIConnsGet(_uuid)
 	if err != nil {
 		if errors.Is(err, rtmp.ErrConnNotFound) {
 			a.writeError(ctx, http.StatusNotFound, err)
@@ -106,13 +107,13 @@ func (a *API) onRTMPSConnsGet(ctx *gin.Context) {
 }
 
 func (a *API) onRTMPSConnsKick(ctx *gin.Context) {
-	uuid, err := uuid.Parse(ctx.Param("id"))
+	_uuid, err := uuid.Parse(ctx.Param("id"))
 	if err != nil {
 		a.writeError(ctx, http.StatusBadRequest, err)
 		return
 	}
 
-	err = a.RTMPSServer.APIConnsKick(uuid)
+	err = a.RTMPSServer.APIConnsKick(_uuid)
 	if err != nil {
 		if errors.Is(err, rtmp.ErrConnNotFound) {
 			a.writeError(ctx, http.StatusNotFound, err)

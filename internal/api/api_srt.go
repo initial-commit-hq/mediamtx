@@ -5,9 +5,10 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/bluenviron/mediamtx/internal/servers/srt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+
+	"github.com/bluenviron/mediamtx/internal/servers/srt"
 )
 
 func (a *API) onSRTConnsList(ctx *gin.Context) {
@@ -29,13 +30,13 @@ func (a *API) onSRTConnsList(ctx *gin.Context) {
 }
 
 func (a *API) onSRTConnsGet(ctx *gin.Context) {
-	uuid, err := uuid.Parse(ctx.Param("id"))
+	_uuid, err := uuid.Parse(ctx.Param("id"))
 	if err != nil {
 		a.writeError(ctx, http.StatusBadRequest, err)
 		return
 	}
 
-	data, err := a.SRTServer.APIConnsGet(uuid)
+	data, err := a.SRTServer.APIConnsGet(_uuid)
 	if err != nil {
 		if errors.Is(err, srt.ErrConnNotFound) {
 			a.writeError(ctx, http.StatusNotFound, err)
@@ -49,13 +50,13 @@ func (a *API) onSRTConnsGet(ctx *gin.Context) {
 }
 
 func (a *API) onSRTConnsKick(ctx *gin.Context) {
-	uuid, err := uuid.Parse(ctx.Param("id"))
+	_uuid, err := uuid.Parse(ctx.Param("id"))
 	if err != nil {
 		a.writeError(ctx, http.StatusBadRequest, err)
 		return
 	}
 
-	err = a.SRTServer.APIConnsKick(uuid)
+	err = a.SRTServer.APIConnsKick(_uuid)
 	if err != nil {
 		if errors.Is(err, srt.ErrConnNotFound) {
 			a.writeError(ctx, http.StatusNotFound, err)

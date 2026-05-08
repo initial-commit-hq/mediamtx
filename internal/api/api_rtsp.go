@@ -4,9 +4,10 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/bluenviron/mediamtx/internal/servers/rtsp"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+
+	"github.com/bluenviron/mediamtx/internal/servers/rtsp"
 )
 
 func (a *API) onRTSPConnsList(ctx *gin.Context) {
@@ -28,13 +29,13 @@ func (a *API) onRTSPConnsList(ctx *gin.Context) {
 }
 
 func (a *API) onRTSPConnsGet(ctx *gin.Context) {
-	uuid, err := uuid.Parse(ctx.Param("id"))
+	_uuid, err := uuid.Parse(ctx.Param("id"))
 	if err != nil {
 		a.writeError(ctx, http.StatusBadRequest, err)
 		return
 	}
 
-	data, err := a.RTSPServer.APIConnsGet(uuid)
+	data, err := a.RTSPServer.APIConnsGet(_uuid)
 	if err != nil {
 		if errors.Is(err, rtsp.ErrConnNotFound) {
 			a.writeError(ctx, http.StatusNotFound, err)
@@ -66,13 +67,13 @@ func (a *API) onRTSPSessionsList(ctx *gin.Context) {
 }
 
 func (a *API) onRTSPSessionsGet(ctx *gin.Context) {
-	uuid, err := uuid.Parse(ctx.Param("id"))
+	_uuid, err := uuid.Parse(ctx.Param("id"))
 	if err != nil {
 		a.writeError(ctx, http.StatusBadRequest, err)
 		return
 	}
 
-	data, err := a.RTSPServer.APISessionsGet(uuid)
+	data, err := a.RTSPServer.APISessionsGet(_uuid)
 	if err != nil {
 		if errors.Is(err, rtsp.ErrSessionNotFound) {
 			a.writeError(ctx, http.StatusNotFound, err)
@@ -86,13 +87,13 @@ func (a *API) onRTSPSessionsGet(ctx *gin.Context) {
 }
 
 func (a *API) onRTSPSessionsKick(ctx *gin.Context) {
-	uuid, err := uuid.Parse(ctx.Param("id"))
+	_uuid, err := uuid.Parse(ctx.Param("id"))
 	if err != nil {
 		a.writeError(ctx, http.StatusBadRequest, err)
 		return
 	}
 
-	err = a.RTSPServer.APISessionsKick(uuid)
+	err = a.RTSPServer.APISessionsKick(_uuid)
 	if err != nil {
 		if errors.Is(err, rtsp.ErrSessionNotFound) {
 			a.writeError(ctx, http.StatusNotFound, err)
@@ -124,13 +125,13 @@ func (a *API) onRTSPSConnsList(ctx *gin.Context) {
 }
 
 func (a *API) onRTSPSConnsGet(ctx *gin.Context) {
-	uuid, err := uuid.Parse(ctx.Param("id"))
+	_uuid, err := uuid.Parse(ctx.Param("id"))
 	if err != nil {
 		a.writeError(ctx, http.StatusBadRequest, err)
 		return
 	}
 
-	data, err := a.RTSPSServer.APIConnsGet(uuid)
+	data, err := a.RTSPSServer.APIConnsGet(_uuid)
 	if err != nil {
 		if errors.Is(err, rtsp.ErrConnNotFound) {
 			a.writeError(ctx, http.StatusNotFound, err)
@@ -162,13 +163,13 @@ func (a *API) onRTSPSSessionsList(ctx *gin.Context) {
 }
 
 func (a *API) onRTSPSSessionsGet(ctx *gin.Context) {
-	uuid, err := uuid.Parse(ctx.Param("id"))
+	_uuid, err := uuid.Parse(ctx.Param("id"))
 	if err != nil {
 		a.writeError(ctx, http.StatusBadRequest, err)
 		return
 	}
 
-	data, err := a.RTSPSServer.APISessionsGet(uuid)
+	data, err := a.RTSPSServer.APISessionsGet(_uuid)
 	if err != nil {
 		if errors.Is(err, rtsp.ErrSessionNotFound) {
 			a.writeError(ctx, http.StatusNotFound, err)
@@ -182,13 +183,13 @@ func (a *API) onRTSPSSessionsGet(ctx *gin.Context) {
 }
 
 func (a *API) onRTSPSSessionsKick(ctx *gin.Context) {
-	uuid, err := uuid.Parse(ctx.Param("id"))
+	_uuid, err := uuid.Parse(ctx.Param("id"))
 	if err != nil {
 		a.writeError(ctx, http.StatusBadRequest, err)
 		return
 	}
 
-	err = a.RTSPSServer.APISessionsKick(uuid)
+	err = a.RTSPSServer.APISessionsKick(_uuid)
 	if err != nil {
 		if errors.Is(err, rtsp.ErrSessionNotFound) {
 			a.writeError(ctx, http.StatusNotFound, err)

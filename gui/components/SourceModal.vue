@@ -17,21 +17,21 @@
                         />
                     </div>
 
-                    <div class="field">
-                        <label>Source type</label>
-                        <select v-model="form.sourceType">
-                            <option value="rtsp">RTSP</option>
-                            <option value="rtmp">RTMP</option>
-                            <option value="hls">HLS</option>
-                            <option value="srt">SRT</option>
-                            <option value="redirect">Redirect</option>
-                        </select>
-                    </div>
+<!-- <div class="field">-->
+<!--     <label>Source type</label>-->
+<!--     <select v-model="form.sourceType">-->
+<!--         <option value="rtsp">RTSP</option>-->
+<!--         <option value="rtmp">RTMP</option>-->
+<!--         <option value="hls">HLS</option>-->
+<!--         <option value="srt">SRT</option>-->
+<!--         <option value="redirect">Redirect</option>-->
+<!--     </select>-->
+<!-- </div>-->
 
                     <div class="field">
-                        <label>Source URL</label>
+                        <label>Source</label>
                         <input
-                            v-model="form.sourceUrl"
+                            v-model="form.source"
                             :placeholder="sourcePlaceholder"
                         />
                     </div>
@@ -85,7 +85,7 @@ const { addConfigPath, patchConfigPath } = useMediaMtx();
 const isEdit = computed(() => !!props.initial);
 
 function inferSourceType(source: string): string {
-    if (!source || source === "rtsp") return "rtsp";
+    if (!source || source.startsWith("rtsp")) return "rtsp";
     if (source.startsWith("rtmp")) return "rtmp";
     if (source.startsWith("http")) return "hls";
     if (source.startsWith("srt")) return "srt";
@@ -95,8 +95,8 @@ function inferSourceType(source: string): string {
 
 const form = reactive({
     name: props.initial?.name ?? "",
-    sourceType: inferSourceType(props.initial?.source ?? ""),
-    sourceUrl:
+    // sourceType: inferSourceType(props.initial?.source ?? ""),
+    source:
         props.initial?.source && props.initial.source !== "rtsp"
             ? props.initial.source
             : "",
@@ -107,15 +107,15 @@ const error = ref("");
 const saving = ref(false);
 
 const sourcePlaceholder = computed(() => {
-    switch (form.sourceType) {
+    switch (inferSourceType(form.source ?? "")) {
         case "rtsp":
-            return "rtsp://user:pass@192.168.1.10:554/stream";
+            return "rtsp://user:pass@127.0.0.1:554/stream";
         case "rtmp":
-            return "rtmp://192.168.1.10/live/stream";
+            return "rtmp://127.0.0.1/live/stream";
         case "hls":
-            return "http://192.168.1.10:8888/stream/index.m3u8";
+            return "http://127.0.0.1:8888/stream/index.m3u8";
         case "srt":
-            return "srt://192.168.1.10:8890?streamid=stream";
+            return "srt://127.0.0.1:8890?streamid=stream";
         case "redirect":
             return "rtsp://other-server/stream";
         default:
@@ -129,14 +129,15 @@ async function save() {
         error.value = "Path name is required";
         return;
     }
-    if (form.sourceType !== "rtsp" && !form.sourceUrl.trim()) {
+    if (!form.source.trim()) {
         error.value = "Source URL is required";
         return;
     }
 
     saving.value = true;
     const body: Record<string, any> = {
-        source: form.sourceType === "rtsp" ? "rtsp" : form.sourceUrl.trim(),
+        name: form.name.trim(),
+        source: form.source.trim(),
         sourceOnDemand: form.sourceOnDemand,
     };
 
@@ -170,7 +171,7 @@ async function save() {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 12px;
-    width: 460px;
+    width: 560px;
     max-width: 95vw;
     overflow: hidden;
 }

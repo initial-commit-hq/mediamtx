@@ -5,9 +5,10 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/bluenviron/mediamtx/internal/servers/webrtc"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+
+	"github.com/bluenviron/mediamtx/internal/servers/webrtc"
 )
 
 func (a *API) onWebRTCSessionsList(ctx *gin.Context) {
@@ -29,13 +30,13 @@ func (a *API) onWebRTCSessionsList(ctx *gin.Context) {
 }
 
 func (a *API) onWebRTCSessionsGet(ctx *gin.Context) {
-	uuid, err := uuid.Parse(ctx.Param("id"))
+	_uuid, err := uuid.Parse(ctx.Param("id"))
 	if err != nil {
 		a.writeError(ctx, http.StatusBadRequest, err)
 		return
 	}
 
-	data, err := a.WebRTCServer.APISessionsGet(uuid)
+	data, err := a.WebRTCServer.APISessionsGet(_uuid)
 	if err != nil {
 		if errors.Is(err, webrtc.ErrSessionNotFound) {
 			a.writeError(ctx, http.StatusNotFound, err)
@@ -49,13 +50,13 @@ func (a *API) onWebRTCSessionsGet(ctx *gin.Context) {
 }
 
 func (a *API) onWebRTCSessionsKick(ctx *gin.Context) {
-	uuid, err := uuid.Parse(ctx.Param("id"))
+	_uuid, err := uuid.Parse(ctx.Param("id"))
 	if err != nil {
 		a.writeError(ctx, http.StatusBadRequest, err)
 		return
 	}
 
-	err = a.WebRTCServer.APISessionsKick(uuid)
+	err = a.WebRTCServer.APISessionsKick(_uuid)
 	if err != nil {
 		if errors.Is(err, webrtc.ErrSessionNotFound) {
 			a.writeError(ctx, http.StatusNotFound, err)
