@@ -2,9 +2,9 @@ export const useMediaMtx = () => {
   const host       = useState('mtx-host',       () => 'localhost')
   const apiPort    = useState('mtx-api-port',   () => '9997')
   const webrtcPort = useState('mtx-webrtc-port', () => '8889')
-  const hlsPort    = useState('mtx-hls-port',   () => '8888')
+  const hlsPort    = useState('mtx-hls-port',   () => '8899')
 
-  // Initialise host from the page's own hostname on first client load
+  // Initialize host from the page's own hostname on first client load
   if (import.meta.client && host.value === 'localhost') {
     const saved = localStorage.getItem('mtx-host')
     host.value = saved ?? window.location.hostname

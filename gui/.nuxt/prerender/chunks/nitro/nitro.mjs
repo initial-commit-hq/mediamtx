@@ -1,22 +1,23 @@
-import process from 'node:process';globalThis._importMeta_=globalThis._importMeta_||{url:"file:///_entry.js",env:process.env};import { defineEventHandler, handleCacheHeaders, splitCookiesString, createEvent, fetchWithEvent, isEvent, eventHandler, setHeaders, sendRedirect, proxyRequest, getRequestHeader, setResponseHeaders, setResponseStatus, send, getRequestHeaders, setResponseHeader, getRequestURL, getResponseHeader, removeResponseHeader, createError, appendResponseHeader, createApp, createRouter as createRouter$1, toNodeListener, lazyEventHandler, getResponseStatus } from 'file:///Users/pj/Projects/go/src/mediamtx/gui/node_modules/.pnpm/h3@1.15.10/node_modules/h3/dist/index.mjs';
-import destr from 'file:///Users/pj/Projects/go/src/mediamtx/gui/node_modules/.pnpm/destr@2.0.5/node_modules/destr/dist/index.mjs';
-import { createHooks } from 'file:///Users/pj/Projects/go/src/mediamtx/gui/node_modules/.pnpm/hookable@5.5.3/node_modules/hookable/dist/index.mjs';
-import { createFetch, Headers as Headers$1 } from 'file:///Users/pj/Projects/go/src/mediamtx/gui/node_modules/.pnpm/ofetch@1.5.1/node_modules/ofetch/dist/node.mjs';
-import { fetchNodeRequestHandler, callNodeRequestHandler } from 'file:///Users/pj/Projects/go/src/mediamtx/gui/node_modules/.pnpm/node-mock-http@1.0.4/node_modules/node-mock-http/dist/index.mjs';
-import { parseURL, withoutBase, joinURL, getQuery, withQuery, decodePath, withLeadingSlash, withoutTrailingSlash } from 'file:///Users/pj/Projects/go/src/mediamtx/gui/node_modules/.pnpm/ufo@1.6.3/node_modules/ufo/dist/index.mjs';
-import { createStorage, defineDriver, prefixStorage } from 'file:///Users/pj/Projects/go/src/mediamtx/gui/node_modules/.pnpm/unstorage@1.17.5_db0@0.3.4_ioredis@5.10.1/node_modules/unstorage/dist/index.mjs';
-import unstorage_47drivers_47fs from 'file:///Users/pj/Projects/go/src/mediamtx/gui/node_modules/.pnpm/unstorage@1.17.5_db0@0.3.4_ioredis@5.10.1/node_modules/unstorage/drivers/fs.mjs';
-import fsDriver from 'file:///Users/pj/Projects/go/src/mediamtx/gui/node_modules/.pnpm/unstorage@1.17.5_db0@0.3.4_ioredis@5.10.1/node_modules/unstorage/drivers/fs-lite.mjs';
-import lruCache from 'file:///Users/pj/Projects/go/src/mediamtx/gui/node_modules/.pnpm/unstorage@1.17.5_db0@0.3.4_ioredis@5.10.1/node_modules/unstorage/drivers/lru-cache.mjs';
-import { digest } from 'file:///Users/pj/Projects/go/src/mediamtx/gui/node_modules/.pnpm/ohash@2.0.11/node_modules/ohash/dist/index.mjs';
-import { klona } from 'file:///Users/pj/Projects/go/src/mediamtx/gui/node_modules/.pnpm/klona@2.0.6/node_modules/klona/dist/index.mjs';
-import defu, { defuFn } from 'file:///Users/pj/Projects/go/src/mediamtx/gui/node_modules/.pnpm/defu@6.1.4/node_modules/defu/dist/defu.mjs';
-import { snakeCase } from 'file:///Users/pj/Projects/go/src/mediamtx/gui/node_modules/.pnpm/scule@1.3.0/node_modules/scule/dist/index.mjs';
-import { getContext } from 'file:///Users/pj/Projects/go/src/mediamtx/gui/node_modules/.pnpm/unctx@2.5.0/node_modules/unctx/dist/index.mjs';
-import { toRouteMatcher, createRouter } from 'file:///Users/pj/Projects/go/src/mediamtx/gui/node_modules/.pnpm/radix3@1.1.2/node_modules/radix3/dist/index.mjs';
+import process from 'node:process';globalThis._importMeta_=globalThis._importMeta_||{url:"file:///_entry.js",env:process.env};import { defineEventHandler, handleCacheHeaders, splitCookiesString, createEvent, fetchWithEvent, isEvent, eventHandler, setHeaders, createError, sendRedirect, proxyRequest, getRequestHeader, setResponseHeaders, setResponseStatus, send, getRequestHeaders, setResponseHeader, appendResponseHeader, getRequestURL, getResponseHeader, removeResponseHeader, createApp, createRouter as createRouter$1, toNodeListener, lazyEventHandler, getResponseStatus } from 'file:///Users/pj/Projects/go/src/mediamtx/gui/node_modules/h3/dist/index.mjs';
+import destr from 'file:///Users/pj/Projects/go/src/mediamtx/gui/node_modules/destr/dist/index.mjs';
+import { createHooks } from 'file:///Users/pj/Projects/go/src/mediamtx/gui/node_modules/hookable/dist/index.mjs';
+import { createFetch, Headers as Headers$1 } from 'file:///Users/pj/Projects/go/src/mediamtx/gui/node_modules/ofetch/dist/node.mjs';
+import { fetchNodeRequestHandler, callNodeRequestHandler } from 'file:///Users/pj/Projects/go/src/mediamtx/gui/node_modules/node-mock-http/dist/index.mjs';
+import { parseURL, withoutBase, joinURL, getQuery, withQuery, decodePath, withLeadingSlash, withoutTrailingSlash } from 'file:///Users/pj/Projects/go/src/mediamtx/gui/node_modules/ufo/dist/index.mjs';
+import { createStorage, defineDriver, prefixStorage } from 'file:///Users/pj/Projects/go/src/mediamtx/gui/node_modules/unstorage/dist/index.mjs';
+import unstorage_47drivers_47fs from 'file:///Users/pj/Projects/go/src/mediamtx/gui/node_modules/unstorage/drivers/fs.mjs';
+import crypto from 'node:crypto';
+import fsDriver from 'file:///Users/pj/Projects/go/src/mediamtx/gui/node_modules/unstorage/drivers/fs-lite.mjs';
+import lruCache from 'file:///Users/pj/Projects/go/src/mediamtx/gui/node_modules/unstorage/drivers/lru-cache.mjs';
+import { digest } from 'file:///Users/pj/Projects/go/src/mediamtx/gui/node_modules/ohash/dist/index.mjs';
+import { klona } from 'file:///Users/pj/Projects/go/src/mediamtx/gui/node_modules/klona/dist/index.mjs';
+import defu, { defuFn } from 'file:///Users/pj/Projects/go/src/mediamtx/gui/node_modules/defu/dist/defu.mjs';
+import { snakeCase } from 'file:///Users/pj/Projects/go/src/mediamtx/gui/node_modules/scule/dist/index.mjs';
+import { getContext } from 'file:///Users/pj/Projects/go/src/mediamtx/gui/node_modules/unctx/dist/index.mjs';
+import { toRouteMatcher, createRouter } from 'file:///Users/pj/Projects/go/src/mediamtx/gui/node_modules/radix3/dist/index.mjs';
 import { promises } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'file:///Users/pj/Projects/go/src/mediamtx/gui/node_modules/.pnpm/pathe@2.0.3/node_modules/pathe/dist/index.mjs';
+import { dirname, resolve } from 'file:///Users/pj/Projects/go/src/mediamtx/gui/node_modules/pathe/dist/index.mjs';
 
 const serverAssets = [{"baseName":"server","dir":"/Users/pj/Projects/go/src/mediamtx/gui/server/assets"}];
 
@@ -32,37 +33,44 @@ for (const asset of serverAssets) {
 /**
  * @param {string} item
  */
-const normalizeFsKey = item => decodeURIComponent(item.replaceAll(':', '_'));
+function normalizeFsKey (item) {
+  const safe = item.replace(/[^\w.-]/g, '_');
+  const prefix = safe.slice(0, 20);
+  const hash = crypto.createHash('sha256').update(item).digest('hex');
+  return `${prefix}-${hash}`
+}
 
-/**
- * @param {{ base: string }} opts
- */
-const _47Users_47pj_47Projects_47go_47src_47mediamtx_47gui_47node_modules_47_46pnpm_47nuxt_643_4616_462__64parcel_43watcher_642_465_466_cac_646_467_4614_db0_640_463_464_ioredis_645_4610_461_magicast_640_463_465_ro_006fe81bab742a5b49b7af5eacbc4712_47node_modules_47nuxt_47dist_47core_47runtime_47nitro_47utils_47cache_45driver_46js = defineDriver((opts) => {
-  const fs = fsDriver({ base: opts.base });
-  const lru = lruCache({ max: 1000 });
+const _47Users_47pj_47Projects_47go_47src_47mediamtx_47gui_47node_modules_47_64nuxt_47nitro_45server_47dist_47runtime_47utils_47cache_45driver_46js = defineDriver(
+  /**
+   * @param {{ base?: string }} opts
+   */
+  (opts) => {
+    const fs = fsDriver({ base: opts.base });
+    const lru = lruCache({ max: 1000 });
 
-  return {
-    ...fs, // fall back to file system - only the bottom three methods are used in renderer
-    async setItem (key, value, opts) {
-      await Promise.all([
-        fs.setItem?.(normalizeFsKey(key), value, opts),
-        lru.setItem?.(key, value, opts),
-      ]);
-    },
-    async hasItem (key, opts) {
-      return await lru.hasItem(key, opts) || await fs.hasItem(normalizeFsKey(key), opts)
-    },
-    async getItem (key, opts) {
-      return await lru.getItem(key, opts) || await fs.getItem(normalizeFsKey(key), opts)
-    },
-  }
-});
+    return {
+      ...fs, // fall back to file system - only the bottom three methods are used in renderer
+      async setItem (key, value, opts) {
+        await Promise.all([
+          fs.setItem?.(normalizeFsKey(key), value, opts),
+          lru.setItem?.(key, value, opts),
+        ]);
+      },
+      async hasItem (key, opts) {
+        return await lru.hasItem(key, opts) || await fs.hasItem(normalizeFsKey(key), opts)
+      },
+      async getItem (key, opts) {
+        return await lru.getItem(key, opts) || await fs.getItem(normalizeFsKey(key), opts)
+      },
+    }
+  },
+);
 
 const storage = createStorage({});
 
 storage.mount('/assets', assets$1);
 
-storage.mount('internal:nuxt:prerender', _47Users_47pj_47Projects_47go_47src_47mediamtx_47gui_47node_modules_47_46pnpm_47nuxt_643_4616_462__64parcel_43watcher_642_465_466_cac_646_467_4614_db0_640_463_464_ioredis_645_4610_461_magicast_640_463_465_ro_006fe81bab742a5b49b7af5eacbc4712_47node_modules_47nuxt_47dist_47core_47runtime_47nitro_47utils_47cache_45driver_46js({"driver":"/Users/pj/Projects/go/src/mediamtx/gui/node_modules/.pnpm/nuxt@3.16.2_@parcel+watcher@2.5.6_cac@6.7.14_db0@0.3.4_ioredis@5.10.1_magicast@0.3.5_ro_006fe81bab742a5b49b7af5eacbc4712/node_modules/nuxt/dist/core/runtime/nitro/utils/cache-driver.js","base":"/Users/pj/Projects/go/src/mediamtx/gui/.nuxt/cache/nitro/prerender"}));
+storage.mount('internal:nuxt:prerender', _47Users_47pj_47Projects_47go_47src_47mediamtx_47gui_47node_modules_47_64nuxt_47nitro_45server_47dist_47runtime_47utils_47cache_45driver_46js({"driver":"/Users/pj/Projects/go/src/mediamtx/gui/node_modules/@nuxt/nitro-server/dist/runtime/utils/cache-driver.js","base":"/Users/pj/Projects/go/src/mediamtx/gui/.nuxt/cache/nitro/prerender"}));
 storage.mount('data', fsDriver({"driver":"fsLite","base":"./.data/kv"}));
 storage.mount('root', unstorage_47drivers_47fs({"driver":"fs","readOnly":true,"base":"/Users/pj/Projects/go/src/mediamtx/gui","watchOptions":{"ignored":[null]}}));
 storage.mount('src', unstorage_47drivers_47fs({"driver":"fs","readOnly":true,"base":"/Users/pj/Projects/go/src/mediamtx/gui/server","watchOptions":{"ignored":[null]}}));
@@ -640,7 +648,7 @@ function _expandFromEnv(value) {
 const _inlineRuntimeConfig = {
   "app": {
     "baseURL": "/",
-    "buildId": "fd5e152a-f652-48e3-a1e7-ba4afa218ad6",
+    "buildId": "1615ab39-aff5-4c2f-9ae6-4869094dca86",
     "buildAssetsDir": "/_nuxt/",
     "cdnURL": ""
   },
@@ -718,6 +726,17 @@ getContext("nitro-app", {
   AsyncLocalStorage: void 0
 });
 
+function isPathInScope(pathname, base) {
+  let canonical;
+  try {
+    const pre = pathname.replace(/%2f/gi, "/").replace(/%5c/gi, "\\");
+    canonical = new URL(pre, "http://_").pathname;
+  } catch {
+    return false;
+  }
+  return !base || canonical === base || canonical.startsWith(base + "/");
+}
+
 const config = useRuntimeConfig();
 const _routeRulesMatcher = toRouteMatcher(
   createRouter({ routes: config.nitro.routeRules })
@@ -734,7 +753,12 @@ function createRouteRulesHandler(ctx) {
         let targetPath = event.path;
         const strpBase = routeRules.redirect._redirectStripBase;
         if (strpBase) {
+          if (!isPathInScope(event.path.split("?")[0], strpBase)) {
+            throw createError({ statusCode: 400 });
+          }
           targetPath = withoutBase(targetPath, strpBase);
+        } else if (targetPath.startsWith("//")) {
+          targetPath = targetPath.replace(/^\/+/, "/");
         }
         target = joinURL(target.slice(0, -3), targetPath);
       } else if (event.path.includes("?")) {
@@ -749,7 +773,12 @@ function createRouteRulesHandler(ctx) {
         let targetPath = event.path;
         const strpBase = routeRules.proxy._proxyStripBase;
         if (strpBase) {
+          if (!isPathInScope(event.path.split("?")[0], strpBase)) {
+            throw createError({ statusCode: 400 });
+          }
           targetPath = withoutBase(targetPath, strpBase);
+        } else if (targetPath.startsWith("//")) {
+          targetPath = targetPath.replace(/^\/+/, "/");
         }
         target = joinURL(target.slice(0, -3), targetPath);
       } else if (event.path.includes("?")) {
@@ -821,58 +850,74 @@ function normalizeCookieHeaders(headers) {
 }
 
 function isJsonRequest(event) {
-  if (hasReqHeader(event, "accept", "text/html")) {
-    return false;
-  }
-  return hasReqHeader(event, "accept", "application/json") || hasReqHeader(event, "user-agent", "curl/") || hasReqHeader(event, "user-agent", "httpie/") || hasReqHeader(event, "sec-fetch-mode", "cors") || event.path.startsWith("/api/") || event.path.endsWith(".json");
+	
+	if (hasReqHeader(event, "accept", "text/html")) {
+		return false;
+	}
+	return hasReqHeader(event, "accept", "application/json") || hasReqHeader(event, "user-agent", "curl/") || hasReqHeader(event, "user-agent", "httpie/") || hasReqHeader(event, "sec-fetch-mode", "cors") || event.path.startsWith("/api/") || event.path.endsWith(".json");
 }
 function hasReqHeader(event, name, includes) {
-  const value = getRequestHeader(event, name);
-  return value && typeof value === "string" && value.toLowerCase().includes(includes);
+	const value = getRequestHeader(event, name);
+	return !!(value && typeof value === "string" && value.toLowerCase().includes(includes));
 }
 
 const errorHandler$0 = (async function errorhandler(error, event, { defaultHandler }) {
-  if (isJsonRequest(event)) {
-    return;
-  }
-  const defaultRes = await defaultHandler(error, event, { json: true });
-  const statusCode = error.statusCode || 500;
-  if (statusCode === 404 && defaultRes.status === 302) {
-    setResponseHeaders(event, defaultRes.headers);
-    setResponseStatus(event, defaultRes.status, defaultRes.statusText);
-    return send(event, JSON.stringify(defaultRes.body, null, 2));
-  }
-  const errorObject = defaultRes.body;
-  const url = new URL(errorObject.url);
-  errorObject.url = url.pathname + url.search + url.hash;
-  errorObject.message ||= "Server Error";
-  errorObject.data ||= error.data;
-  delete defaultRes.headers["content-type"];
-  delete defaultRes.headers["content-security-policy"];
-  setResponseHeaders(event, defaultRes.headers);
-  const reqHeaders = getRequestHeaders(event);
-  const isRenderingError = event.path.startsWith("/__nuxt_error") || !!reqHeaders["x-nuxt-error"];
-  const res = isRenderingError ? null : await useNitroApp().localFetch(
-    withQuery(joinURL(useRuntimeConfig(event).app.baseURL, "/__nuxt_error"), errorObject),
-    {
-      headers: { ...reqHeaders, "x-nuxt-error": "true" },
-      redirect: "manual"
-    }
-  ).catch(() => null);
-  if (event.handled) {
-    return;
-  }
-  if (!res) {
-    const { template } = await import('../_/error-500.mjs');
-    setResponseHeader(event, "Content-Type", "text/html;charset=UTF-8");
-    return send(event, template(errorObject));
-  }
-  const html = await res.text();
-  for (const [header, value] of res.headers.entries()) {
-    setResponseHeader(event, header, value);
-  }
-  setResponseStatus(event, res.status && res.status !== 200 ? res.status : defaultRes.status, res.statusText || defaultRes.statusText);
-  return send(event, html);
+	if (event.handled || isJsonRequest(event)) {
+		
+		return;
+	}
+	
+	const defaultRes = await defaultHandler(error, event, { json: true });
+	
+	const status = error.status || error.statusCode || 500;
+	if (status === 404 && defaultRes.status === 302) {
+		setResponseHeaders(event, defaultRes.headers);
+		setResponseStatus(event, defaultRes.status, defaultRes.statusText);
+		return send(event, JSON.stringify(defaultRes.body, null, 2));
+	}
+	const errorObject = defaultRes.body;
+	
+	const url = new URL(errorObject.url);
+	errorObject.url = withoutBase(url.pathname, useRuntimeConfig(event).app.baseURL) + url.search + url.hash;
+	
+	errorObject.message = error.unhandled ? errorObject.message || "Server Error" : error.message || errorObject.message || "Server Error";
+	
+	errorObject.data ||= error.data;
+	errorObject.statusText ||= error.statusText || error.statusMessage;
+	delete defaultRes.headers["content-type"];
+	delete defaultRes.headers["content-security-policy"];
+	setResponseHeaders(event, defaultRes.headers);
+	
+	const reqHeaders = getRequestHeaders(event);
+	
+	const isRenderingError = event.path.startsWith("/__nuxt_error") || !!reqHeaders["x-nuxt-error"];
+	
+	const res = isRenderingError ? null : await useNitroApp().localFetch(withQuery(joinURL(useRuntimeConfig(event).app.baseURL, "/__nuxt_error"), errorObject), {
+		headers: {
+			...reqHeaders,
+			"x-nuxt-error": "true"
+		},
+		redirect: "manual"
+	}).catch(() => null);
+	if (event.handled) {
+		return;
+	}
+	
+	if (!res) {
+		const { template } = await import('../_/error-500.mjs');
+		setResponseHeader(event, "Content-Type", "text/html;charset=UTF-8");
+		return send(event, template(errorObject));
+	}
+	const html = await res.text();
+	for (const [header, value] of res.headers.entries()) {
+		if (header === "set-cookie") {
+			appendResponseHeader(event, header, value);
+			continue;
+		}
+		setResponseHeader(event, header, value);
+	}
+	setResponseStatus(event, res.status && res.status !== 200 ? res.status : defaultRes.status, res.statusText || defaultRes.statusText);
+	return send(event, html);
 });
 
 function defineNitroErrorHandler(handler) {
@@ -986,7 +1031,7 @@ function getAsset (id) {
 
 const METHODS = /* @__PURE__ */ new Set(["HEAD", "GET"]);
 const EncodingMap = { gzip: ".gz", br: ".br" };
-const _zeyWTh = eventHandler((event) => {
+const _AK_N0T = eventHandler((event) => {
   if (event.method && !METHODS.has(event.method)) {
     return;
   }
@@ -1050,11 +1095,14 @@ const _zeyWTh = eventHandler((event) => {
   return readAsset(id);
 });
 
-const _lazy_kS_n7A = () => import('../_/renderer.mjs');
+const _SxA8c9 = defineEventHandler(() => {});
+
+const _lazy_A7qUN4 = () => import('../_/renderer.mjs');
 
 const handlers = [
-  { route: '', handler: _zeyWTh, lazy: false, middleware: true, method: undefined },
-  { route: '/**', handler: _lazy_kS_n7A, lazy: true, middleware: false, method: undefined }
+  { route: '', handler: _AK_N0T, lazy: false, middleware: true, method: undefined },
+  { route: '/__nuxt_island/**', handler: _SxA8c9, lazy: false, middleware: false, method: undefined },
+  { route: '/**', handler: _lazy_A7qUN4, lazy: true, middleware: false, method: undefined }
 ];
 
 function createNitroApp() {
