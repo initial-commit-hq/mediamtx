@@ -11,9 +11,10 @@ import (
 	"github.com/bluenviron/mediacommon/v2/pkg/codecs/mpeg4audio"
 	"github.com/bluenviron/mediacommon/v2/pkg/formats/mp4/codecs"
 	"github.com/bluenviron/mediacommon/v2/pkg/formats/pmp4"
+	"github.com/stretchr/testify/require"
+
 	"github.com/bluenviron/mediamtx/internal/conf"
 	"github.com/bluenviron/mediamtx/internal/unit"
-	"github.com/stretchr/testify/require"
 )
 
 func TestStreamAlwaysAvailableErrors(t *testing.T) {

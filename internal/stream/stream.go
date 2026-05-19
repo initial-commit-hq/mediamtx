@@ -436,6 +436,54 @@ func (s *Stream) Close() {
 	}
 }
 
+// RebuildFromDesc rebuilds the stream's offline description and media map to match
+// the provided session description. This is used by AlwaysAvailable streams to
+// automatically adapt when a source publishes tracks that differ from
+// alwaysAvailableTracks (e.g. source sends [G711 H264] but config only listed [H264]).
+// The offline sub-stream is restarted with the new shape.
+func (s *Stream) RebuildFromDesc(desc *description.Session) error {
+	if !s.AlwaysAvailable {
+		panic("should not happen")
+	}
+
+	// Stop the current offline sub-stream.
+	if s.offlineSubStream != nil {
+		s.offlineSubStream.close(false)
+		s.offlineSubStream = nil
+	}
+
+	// Build a new offline desc from the source's actual description.
+	s.offlineDesc = &description.Session{
+		Medias: cloneDesc(desc).Medias,
+	}
+	s.Desc = cloneDesc(s.offlineDesc)
+
+	// Rebuild the media map.
+	s.medias = make(map[*description.Media]*streamMedia)
+	for _, media := range s.Desc.Medias {
+		sm := &streamMedia{
+			media:                media,
+			alwaysAvailable:      s.AlwaysAvailable,
+			rtpMaxPayloadSize:    s.RTPMaxPayloadSize,
+			replaceNTP:           s.ReplaceNTP,
+			addInboundBytes:      s.addInboundBytes,
+			addOutboundBytes:     s.addOutboundBytes,
+			updateLastTime:       s.updateLastTime,
+			writeRTSP:            s.writeRTSP,
+			inboundFramesInError: s.inboundFramesInError,
+			parent:               s.Parent,
+		}
+		err := sm.initialize()
+		if err != nil {
+			return err
+		}
+		s.medias[media] = sm
+	}
+
+	// Restart offline sub-stream with new shape.
+	return s.StartOfflineSubStream()
+}
+
 // StartOfflineSubStream starts the offline substream.
 func (s *Stream) StartOfflineSubStream() error {
 	if !s.AlwaysAvailable {

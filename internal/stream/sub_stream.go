@@ -7,6 +7,7 @@ import (
 	"github.com/bluenviron/gortsplib/v5/pkg/description"
 	"github.com/bluenviron/gortsplib/v5/pkg/format"
 	"github.com/bluenviron/mediacommon/v2/pkg/codecs/mpeg4audio"
+
 	"github.com/bluenviron/mediamtx/internal/formatlabel"
 	"github.com/bluenviron/mediamtx/internal/logger"
 	"github.com/bluenviron/mediamtx/internal/unit"
@@ -64,7 +65,7 @@ func mediasAreCompatible(medias1 []*description.Media, medias2 []*description.Me
 				if format1.MULaw != format2.MULaw ||
 					format1.SampleRate != format2.SampleRate ||
 					format1.ChannelCount != format2.ChannelCount {
-					return fmt.Errorf("G711 configuration does not match, is %s, but stream expects %s",
+					return fmt.Errorf("g711 configuration does not match, is %s, but stream expects %s",
 						formatG711Config(format2), formatG711Config(format1))
 				}
 
@@ -163,7 +164,7 @@ func (ss *SubStream) Initialize() error {
 }
 
 // WriteUnit writes a Unit.
-func (ss *SubStream) WriteUnit(medi *description.Media, forma format.Format, u *unit.Unit) {
+func (ss *SubStream) WriteUnit(media *description.Media, forma format.Format, u *unit.Unit) {
 	ss.Stream.mutex.RLock()
 	defer ss.Stream.mutex.RUnlock()
 
@@ -171,7 +172,7 @@ func (ss *SubStream) WriteUnit(medi *description.Media, forma format.Format, u *
 		return
 	}
 
-	ssm := ss.medias[medi]
+	ssm := ss.medias[media]
 	ssf := ssm.formats[forma]
 
 	ssf.writeUnit(u)

@@ -438,8 +438,26 @@ func (pa *path) doSourceStaticSetReady(req defs.PathSourceStaticSetReadyReq) {
 	}
 	err := subStream.Initialize()
 	if err != nil {
-		req.Res <- defs.PathSourceStaticSetReadyRes{Err: err}
-		return
+		if pa.conf.AlwaysAvailable {
+			// The source's tracks don't match alwaysAvailableTracks. Rebuild the
+			// stream to match what the source actually publishes and retry.
+			pa.Log(logger.Warn, "source track layout differs from configured alwaysAvailableTracks (%v); rebuilding stream to match source", err)
+			rebuildErr := pa.stream.RebuildFromDesc(req.Desc)
+			if rebuildErr != nil {
+				req.Res <- defs.PathSourceStaticSetReadyRes{Err: rebuildErr}
+				return
+			}
+			subStream = &stream.SubStream{
+				Stream:        pa.stream,
+				CurDesc:       req.Desc,
+				UseRTPPackets: req.UseRTPPackets,
+			}
+			err = subStream.Initialize()
+		}
+		if err != nil {
+			req.Res <- defs.PathSourceStaticSetReadyRes{Err: err}
+			return
+		}
 	}
 
 	if pa.conf.AlwaysAvailable {
@@ -571,8 +589,26 @@ func (pa *path) doAddPublisher(req defs.PathAddPublisherReq) {
 	}
 	err := subStream.Initialize()
 	if err != nil {
-		req.Res <- defs.PathAddPublisherRes{Err: err}
-		return
+		if pa.conf.AlwaysAvailable {
+			// The publisher's tracks don't match alwaysAvailableTracks. Rebuild the
+			// stream to match what the publisher actually sends and retry.
+			pa.Log(logger.Warn, "publisher track layout differs from configured alwaysAvailableTracks (%v); rebuilding stream to match publisher", err)
+			rebuildErr := pa.stream.RebuildFromDesc(req.Desc)
+			if rebuildErr != nil {
+				req.Res <- defs.PathAddPublisherRes{Err: rebuildErr}
+				return
+			}
+			subStream = &stream.SubStream{
+				Stream:        pa.stream,
+				CurDesc:       req.Desc,
+				UseRTPPackets: req.UseRTPPackets,
+			}
+			err = subStream.Initialize()
+		}
+		if err != nil {
+			req.Res <- defs.PathAddPublisherRes{Err: err}
+			return
+		}
 	}
 
 	pa.source = req.Author
