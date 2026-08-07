@@ -438,24 +438,45 @@ func (pa *path) doSourceStaticSetReady(req defs.PathSourceStaticSetReadyReq) {
 	}
 	err := subStream.Initialize()
 	if err != nil {
-		// Only a track-layout mismatch is worth rebuilding for. A codec with no RTP
-		// encoder (Generic) fails for a reason the rebuild cannot change, so retrying
-		// produced an unbounded loop -- several warn/error pairs per second per path,
-		// which is what filled the logs on The Dean:
+		// A codec with no RTP encoder is not a layout problem, so rebuilding as-is
+		// cannot fix it -- that produced an unbounded loop, several warn/error pairs
+		// per second per path.
 		//
-		//   WAR source track layout differs ... (RTP encoder not available for
-		//       format *format.Generic); rebuilding stream to match source
-		//   ERR [RTSP source] RTP encoder not available for format *format.Generic
-		//
-		// Reported once and left not-ready instead: the path is genuinely unusable
-		// until the camera is reconfigured to a supported codec.
+		// Instead, drop the unrelayable tracks and rebuild from what remains. Cameras
+		// commonly advertise a third track carrying no media (ffprobe: `Data: none`,
+		// which gortsplib maps to format.Generic), and failing the whole path over it
+		// meant the video and audio were lost too: 4 of 6 cameras on The Dean were
+		// unservable through the relay for this reason, while streaming fine directly
+		// because ffmpeg just ignores the empty track.
 		if pa.conf.AlwaysAvailable && stream.IsRTPEncoderNotAvailable(err) {
-			pa.Log(logger.Error, "source uses a codec with no RTP encoder (%v); "+
-				"this path cannot be served until the source publishes a supported codec", err)
-			req.Res <- defs.PathSourceStaticSetReadyRes{Err: err}
-			return
-		}
-		if pa.conf.AlwaysAvailable {
+			filtered, dropped := stream.FilterRelayableMedias(req.Desc)
+			if len(filtered.Medias) == 0 {
+				pa.Log(logger.Error, "source publishes no relayable track (%v); "+
+					"this path cannot be served", err)
+				req.Res <- defs.PathSourceStaticSetReadyRes{Err: err}
+				return
+			}
+
+			pa.Log(logger.Warn, "dropping %d track(s) with no RTP encoder (%v); "+
+				"serving the remaining %d media(s)", len(dropped), dropped, len(filtered.Medias))
+
+			rebuildErr := pa.stream.RebuildFromDesc(filtered)
+			if rebuildErr != nil {
+				req.Res <- defs.PathSourceStaticSetReadyRes{Err: rebuildErr}
+				return
+			}
+			subStream = &stream.SubStream{
+				Stream:        pa.stream,
+				CurDesc:       filtered,
+				UseRTPPackets: req.UseRTPPackets,
+			}
+			err = subStream.Initialize()
+			if err != nil {
+				pa.Log(logger.Error, "still cannot serve after dropping unrelayable tracks: %v", err)
+				req.Res <- defs.PathSourceStaticSetReadyRes{Err: err}
+				return
+			}
+		} else if pa.conf.AlwaysAvailable {
 			// The source's tracks don't match alwaysAvailableTracks. Rebuild the
 			// stream to match what the source actually publishes and retry.
 			pa.Log(logger.Warn, "source track layout differs from configured alwaysAvailableTracks (%v); rebuilding stream to match source", err)
@@ -606,15 +627,37 @@ func (pa *path) doAddPublisher(req defs.PathAddPublisherReq) {
 	}
 	err := subStream.Initialize()
 	if err != nil {
-		// Same reasoning as doSourceStaticSetReady: a missing RTP encoder is not a
-		// layout problem, so rebuilding cannot fix it and retrying only loops.
+		// Same reasoning as doSourceStaticSetReady: drop the tracks that cannot be
+		// encoded rather than losing the whole path over them.
 		if pa.conf.AlwaysAvailable && stream.IsRTPEncoderNotAvailable(err) {
-			pa.Log(logger.Error, "publisher uses a codec with no RTP encoder (%v); "+
-				"this path cannot be served until the publisher sends a supported codec", err)
-			req.Res <- defs.PathAddPublisherRes{Err: err}
-			return
-		}
-		if pa.conf.AlwaysAvailable {
+			filtered, dropped := stream.FilterRelayableMedias(req.Desc)
+			if len(filtered.Medias) == 0 {
+				pa.Log(logger.Error, "publisher sends no relayable track (%v); "+
+					"this path cannot be served", err)
+				req.Res <- defs.PathAddPublisherRes{Err: err}
+				return
+			}
+
+			pa.Log(logger.Warn, "dropping %d track(s) with no RTP encoder (%v); "+
+				"serving the remaining %d media(s)", len(dropped), dropped, len(filtered.Medias))
+
+			rebuildErr := pa.stream.RebuildFromDesc(filtered)
+			if rebuildErr != nil {
+				req.Res <- defs.PathAddPublisherRes{Err: rebuildErr}
+				return
+			}
+			subStream = &stream.SubStream{
+				Stream:        pa.stream,
+				CurDesc:       filtered,
+				UseRTPPackets: req.UseRTPPackets,
+			}
+			err = subStream.Initialize()
+			if err != nil {
+				pa.Log(logger.Error, "still cannot serve after dropping unrelayable tracks: %v", err)
+				req.Res <- defs.PathAddPublisherRes{Err: err}
+				return
+			}
+		} else if pa.conf.AlwaysAvailable {
 			// The publisher's tracks don't match alwaysAvailableTracks. Rebuild the
 			// stream to match what the publisher actually sends and retry.
 			pa.Log(logger.Warn, "publisher track layout differs from configured alwaysAvailableTracks (%v); rebuilding stream to match publisher", err)

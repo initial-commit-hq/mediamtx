@@ -184,3 +184,82 @@ func TestIsRTPEncoderNotAvailable(t *testing.T) {
 	wrapped := fmt.Errorf("initializing sub stream: %w", rtpEncoderNotAvailableError{generic})
 	require.True(t, IsRTPEncoderNotAvailable(wrapped))
 }
+
+// TestFilterRelayableMedias pins the fix for the real camera layout that broke the
+// relay: [H264, G711, Generic].
+//
+// Cameras advertise a third track carrying no media -- ffprobe reports
+// `Stream #0:2: Data: none`, which gortsplib maps to format.Generic. There is no RTP
+// encoder for Generic, and MediaMTX failed the ENTIRE path over it, so the video and
+// audio were lost too. 4 of 6 cameras on The Dean were unservable through the relay
+// for exactly this reason while streaming fine directly, because ffmpeg simply
+// ignores the empty track.
+func TestFilterRelayableMedias(t *testing.T) {
+	generic := &format.Generic{PayloadTyp: 98, RTPMa: "private/90000", FMT: map[string]string{}}
+	require.NoError(t, generic.Init())
+
+	desc := &description.Session{Medias: []*description.Media{
+		{Type: description.MediaTypeVideo, Formats: []format.Format{
+			&format.H264{PayloadTyp: 96, PacketizationMode: 1},
+		}},
+		{Type: description.MediaTypeAudio, Formats: []format.Format{
+			&format.G711{PayloadTyp: 0, MULaw: true, SampleRate: 8000, ChannelCount: 1},
+		}},
+		// the metadata track that killed the path
+		{Type: description.MediaTypeApplication, Formats: []format.Format{generic}},
+	}}
+
+	filtered, dropped := FilterRelayableMedias(desc)
+
+	require.Len(t, filtered.Medias, 2, "video and audio must survive")
+	require.Equal(t, description.MediaTypeVideo, filtered.Medias[0].Type)
+	require.Equal(t, description.MediaTypeAudio, filtered.Medias[1].Type)
+	require.Len(t, dropped, 1)
+	require.Equal(t, "Generic", reflect.TypeOf(dropped[0]).Elem().Name())
+}
+
+// TestFilterRelayableMediasKeepsSupportedFormatsWithinAMedia checks that a media
+// mixing supported and unsupported formats keeps the supported ones, rather than
+// being dropped wholesale.
+func TestFilterRelayableMediasKeepsSupportedFormatsWithinAMedia(t *testing.T) {
+	generic := &format.Generic{PayloadTyp: 98, RTPMa: "private/90000", FMT: map[string]string{}}
+	require.NoError(t, generic.Init())
+
+	desc := &description.Session{Medias: []*description.Media{
+		{Type: description.MediaTypeVideo, Formats: []format.Format{
+			&format.H264{PayloadTyp: 96, PacketizationMode: 1},
+			generic,
+		}},
+	}}
+
+	filtered, dropped := FilterRelayableMedias(desc)
+	require.Len(t, filtered.Medias, 1)
+	require.Len(t, filtered.Medias[0].Formats, 1, "H264 must be kept")
+	require.Len(t, dropped, 1)
+}
+
+// TestFilterRelayableMediasAllUnrelayable pins that a source with nothing servable
+// yields an empty result, which path.go treats as a hard failure -- there is genuinely
+// nothing to serve.
+func TestFilterRelayableMediasAllUnrelayable(t *testing.T) {
+	generic := &format.Generic{PayloadTyp: 98, RTPMa: "private/90000", FMT: map[string]string{}}
+	require.NoError(t, generic.Init())
+
+	desc := &description.Session{Medias: []*description.Media{
+		{Type: description.MediaTypeApplication, Formats: []format.Format{generic}},
+	}}
+
+	filtered, dropped := FilterRelayableMedias(desc)
+	require.Empty(t, filtered.Medias)
+	require.Len(t, dropped, 1)
+}
+
+// TestIsRelayable spot-checks the classifier both ways.
+func TestIsRelayable(t *testing.T) {
+	generic := &format.Generic{PayloadTyp: 98, RTPMa: "private/90000", FMT: map[string]string{}}
+	require.NoError(t, generic.Init())
+
+	require.True(t, IsRelayable(&format.H264{PayloadTyp: 96, PacketizationMode: 1}))
+	require.True(t, IsRelayable(&format.G711{PayloadTyp: 0, MULaw: true, SampleRate: 8000, ChannelCount: 1}))
+	require.False(t, IsRelayable(generic))
+}

@@ -399,6 +399,61 @@ func cloneFormat(forma format.Format) format.Format {
 	}
 }
 
+// IsRelayable reports whether a format can be re-encoded into RTP, i.e. whether
+// MediaMTX can serve it to readers.
+//
+// Cameras commonly advertise a third track that carries no media -- ffprobe shows it
+// as `Stream #0:2: Data: none`, and gortsplib maps anything it has no dedicated
+// implementation for to format.Generic. There is no RTP encoder for Generic, so a
+// path containing such a track could not be served AT ALL: one metadata track killed
+// the video and audio alongside it.
+//
+// Observed on The Dean: 4 of 6 cameras publish [H264, G711, Generic] and were
+// unservable through the relay, while the one publishing only [G711, H264] worked.
+// Those cameras stream fine directly, because ffmpeg simply ignores the empty track.
+func IsRelayable(forma format.Format) bool {
+	_, err := newRTPEncoder(forma, 1400, nil, nil)
+	return err == nil
+}
+
+// FilterRelayableMedias returns desc without the medias whose formats cannot be
+// encoded into RTP.
+//
+// Dropping them is strictly better than failing the path: the tracks carry nothing,
+// and keeping them costs the whole stream. A media is dropped only when NONE of its
+// formats is relayable, so a media that merely mixes supported and unsupported
+// formats keeps the supported ones.
+func FilterRelayableMedias(desc *description.Session) (*description.Session, []format.Format) {
+	var dropped []format.Format
+	medias := make([]*description.Media, 0, len(desc.Medias))
+
+	for _, media := range desc.Medias {
+		formats := make([]format.Format, 0, len(media.Formats))
+		for _, forma := range media.Formats {
+			if IsRelayable(forma) {
+				formats = append(formats, forma)
+			} else {
+				dropped = append(dropped, forma)
+			}
+		}
+		if len(formats) == 0 {
+			continue
+		}
+		medias = append(medias, &description.Media{
+			Type:    media.Type,
+			ID:      media.ID,
+			Control: media.Control,
+			Formats: formats,
+		})
+	}
+
+	return &description.Session{
+		Title:     desc.Title,
+		FECGroups: desc.FECGroups,
+		Medias:    medias,
+	}, dropped
+}
+
 // only fields filled by mediasFromAlwaysAvailableFile and mediasFromAlwaysAvailableTracks are cloned
 func cloneDesc(desc *description.Session) *description.Session {
 	medias := make([]*description.Media, len(desc.Medias))
