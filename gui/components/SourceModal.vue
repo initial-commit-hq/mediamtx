@@ -36,6 +36,21 @@
                         />
                     </div>
 
+                    <div class="field">
+                        <label>RTSP transport</label>
+                        <select v-model="form.rtspTransport">
+                            <option value="">automatic (MediaMTX default)</option>
+                            <option value="tcp">TCP</option>
+                            <option value="udp">UDP</option>
+                            <option value="multicast">multicast</option>
+                        </select>
+                        <p v-if="rtsptHint" class="field-hint">
+                            This source uses <code>rtspt://</code>, which is not a real URI
+                            scheme &mdash; MediaMTX rejects it. Use <code>rtsp://</code> with
+                            transport <strong>TCP</strong>; the scheme is rewritten on save.
+                        </p>
+                    </div>
+
                     <div class="field field-row">
                         <label>On-demand</label>
                         <button
@@ -101,10 +116,20 @@ const form = reactive({
             ? props.initial.source
             : "",
     sourceOnDemand: props.initial?.sourceOnDemand ?? false,
+    // "" means leave it unset so MediaMTX keeps its own default. An explicit
+    // rtspTransport is what makes an rtspt:// camera work: rtspt is a
+    // Live555/FFmpeg convention for "RTSP forced over TCP", not a URI scheme, and
+    // MediaMTX rejects it with `invalid source`. It expresses the same intent as
+    // rtsp:// plus this option.
+    rtspTransport: props.initial?.rtspTransport ?? "",
 });
 
 const error = ref("");
 const saving = ref(false);
+
+// Shown while the field still holds a pseudo-scheme, so the reason the transport
+// matters is visible at the point of entry rather than after a 400.
+const rtsptHint = computed(() => /^rtsp[tu]:\/\//i.test(form.source ?? ""));
 
 const sourcePlaceholder = computed(() => {
     switch (inferSourceType(form.source ?? "")) {
@@ -135,11 +160,32 @@ async function save() {
     }
 
     saving.value = true;
+
+    // Normalise the pseudo-schemes rather than letting MediaMTX reject them.
+    // Cameras are commonly configured as rtspt:// (force TCP) or rtspu:// (force
+    // UDP); neither is a registered scheme, and MediaMTX answers
+    //   400 invalid source: 'rtspt://...'
+    // Rewriting to rtsp:// and setting the matching transport preserves intent.
+    let source = form.source.trim();
+    let rtspTransport = form.rtspTransport;
+    const m = source.match(/^rtsp([tu]):\/\//i);
+    if (m) {
+        source = source.replace(/^rtsp[tu]:\/\//i, "rtsp://");
+        if (!rtspTransport) {
+            rtspTransport = m[1].toLowerCase() === "t" ? "tcp" : "udp";
+        }
+    }
+
     const body: Record<string, any> = {
         name: form.name.trim(),
-        source: form.source.trim(),
+        source,
         sourceOnDemand: form.sourceOnDemand,
     };
+    // Omitted when empty so MediaMTX keeps its own default instead of being
+    // handed an empty string.
+    if (rtspTransport) {
+        body.rtspTransport = rtspTransport;
+    }
 
     try {
         if (isEdit.value) {
@@ -208,6 +254,17 @@ async function save() {
     display: flex;
     flex-direction: column;
     gap: 6px;
+}
+.field-hint {
+    margin: 6px 0 0;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--text-muted, #9aa0a6);
+}
+.field-hint code {
+    padding: 1px 4px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.08);
 }
 .field label {
     font-size: 12px;
