@@ -14,7 +14,12 @@
 
 media/
 logs/
-hooks/
+# Anchored: a bare `hooks/` also matches internal/hooks/, the Go package. That
+# silently swallowed internal/hooks/on_source_connect.go, leaving path.go calling
+# a function whose file was never committed -- internal/core stopped compiling and
+# the published image quietly stopped tracking main for months. This rule is only
+# meant to exclude the runtime hook scripts at the repo root.
+/hooks/
 node_modules/
 dist/
 
