@@ -222,7 +222,26 @@ func mediasFromAlwaysAvailableTracks(alwaysAvailableTracks []conf.AlwaysAvailabl
 	return medias
 }
 
-// only fields filled by mediasFromAlwaysAvailableFile and mediasFromAlwaysAvailableTracks are cloned
+// cloneFormat returns a copy of forma.
+//
+// Formats cannot be copied by value: H264, H265 and MPEG4Video embed a
+// sync.RWMutex guarding their lazily-parsed parameter state, so a struct copy
+// would duplicate a lock. Each case therefore lists its exported fields.
+//
+// EVERY format gortsplib defines must be handled. This originally covered only
+// the eight that alwaysAvailableTracks config can name, which was sufficient
+// while offline descriptions were built solely from that config. RebuildFromDesc
+// then began passing descriptions taken from live sources, where any format at
+// all can appear -- and the default branch panicked, taking down the whole
+// process rather than the one path:
+//
+//	WAR [path ea5e0cbb] source track layout differs from configured
+//	    alwaysAvailableTracks (wants to publish [H264 Generic], ...)
+//	panic: unsupported format
+//
+// Observed against real cameras publishing Generic (a codec with no dedicated
+// implementation) and H265, which crash-looped the container and took every
+// other path on that node offline with it.
 func cloneFormat(forma format.Format) format.Format {
 	switch forma := forma.(type) {
 	case *format.AV1:
@@ -282,8 +301,101 @@ func cloneFormat(forma format.Format) format.Format {
 			ChannelCount: forma.ChannelCount,
 		}
 
+	case *format.VP8:
+		return &format.VP8{
+			PayloadTyp: forma.PayloadTyp,
+			MaxFR:      forma.MaxFR,
+			MaxFS:      forma.MaxFS,
+		}
+
+	case *format.MJPEG:
+		return &format.MJPEG{}
+
+	case *format.MPEG1Video:
+		return &format.MPEG1Video{}
+
+	case *format.MPEG4Video:
+		return &format.MPEG4Video{
+			PayloadTyp:     forma.PayloadTyp,
+			ProfileLevelID: forma.ProfileLevelID,
+			Config:         forma.Config,
+		}
+
+	case *format.MPEG1Audio:
+		return &format.MPEG1Audio{}
+
+	case *format.MPEG4AudioLATM:
+		return &format.MPEG4AudioLATM{
+			PayloadTyp:      forma.PayloadTyp,
+			ProfileLevelID:  forma.ProfileLevelID,
+			Bitrate:         forma.Bitrate,
+			CPresent:        forma.CPresent,
+			StreamMuxConfig: forma.StreamMuxConfig,
+			SBREnabled:      forma.SBREnabled,
+		}
+
+	case *format.AC3:
+		return &format.AC3{
+			PayloadTyp:   forma.PayloadTyp,
+			SampleRate:   forma.SampleRate,
+			ChannelCount: forma.ChannelCount,
+		}
+
+	case *format.G722:
+		return &format.G722{}
+
+	case *format.G726:
+		return &format.G726{
+			PayloadTyp: forma.PayloadTyp,
+			BitRate:    forma.BitRate,
+			BigEndian:  forma.BigEndian,
+		}
+
+	case *format.Speex:
+		return &format.Speex{
+			PayloadTyp: forma.PayloadTyp,
+			SampleRate: forma.SampleRate,
+			VBR:        forma.VBR,
+		}
+
+	case *format.Vorbis:
+		return &format.Vorbis{
+			PayloadTyp:    forma.PayloadTyp,
+			SampleRate:    forma.SampleRate,
+			ChannelCount:  forma.ChannelCount,
+			Configuration: forma.Configuration,
+		}
+
+	case *format.KLV:
+		return &format.KLV{
+			PayloadTyp: forma.PayloadTyp,
+		}
+
+	case *format.MPEGTS:
+		return &format.MPEGTS{}
+
+	case *format.Generic:
+		// Generic derives ClockRat from PayloadTyp and RTPMa in Init(), and that
+		// field is unexported, so it must be recomputed rather than copied. An Init
+		// failure here would mean the source negotiated a format whose clock rate
+		// cannot be resolved, which cannot happen for a format that is already
+		// publishing -- but fall through to the copy rather than fail the path.
+		clone := &format.Generic{
+			PayloadTyp: forma.PayloadTyp,
+			RTPMa:      forma.RTPMa,
+			FMT:        forma.FMT,
+		}
+		_ = clone.Init()
+		return clone
+
 	default:
-		panic("unsupported format")
+		// A format gortsplib added that this switch has not been taught yet.
+		//
+		// Returning the original uncloned is the safe tradeoff: sharing a format
+		// between the source and offline descriptions risks a data race on its
+		// internal parameter cache, but panicking here kills every path on the node.
+		// A degraded single stream beats a crash loop.
+		return forma
 	}
 }
 
