@@ -438,6 +438,23 @@ func (pa *path) doSourceStaticSetReady(req defs.PathSourceStaticSetReadyReq) {
 	}
 	err := subStream.Initialize()
 	if err != nil {
+		// Only a track-layout mismatch is worth rebuilding for. A codec with no RTP
+		// encoder (Generic) fails for a reason the rebuild cannot change, so retrying
+		// produced an unbounded loop -- several warn/error pairs per second per path,
+		// which is what filled the logs on The Dean:
+		//
+		//   WAR source track layout differs ... (RTP encoder not available for
+		//       format *format.Generic); rebuilding stream to match source
+		//   ERR [RTSP source] RTP encoder not available for format *format.Generic
+		//
+		// Reported once and left not-ready instead: the path is genuinely unusable
+		// until the camera is reconfigured to a supported codec.
+		if pa.conf.AlwaysAvailable && stream.IsRTPEncoderNotAvailable(err) {
+			pa.Log(logger.Error, "source uses a codec with no RTP encoder (%v); "+
+				"this path cannot be served until the source publishes a supported codec", err)
+			req.Res <- defs.PathSourceStaticSetReadyRes{Err: err}
+			return
+		}
 		if pa.conf.AlwaysAvailable {
 			// The source's tracks don't match alwaysAvailableTracks. Rebuild the
 			// stream to match what the source actually publishes and retry.
@@ -589,6 +606,14 @@ func (pa *path) doAddPublisher(req defs.PathAddPublisherReq) {
 	}
 	err := subStream.Initialize()
 	if err != nil {
+		// Same reasoning as doSourceStaticSetReady: a missing RTP encoder is not a
+		// layout problem, so rebuilding cannot fix it and retrying only loops.
+		if pa.conf.AlwaysAvailable && stream.IsRTPEncoderNotAvailable(err) {
+			pa.Log(logger.Error, "publisher uses a codec with no RTP encoder (%v); "+
+				"this path cannot be served until the publisher sends a supported codec", err)
+			req.Res <- defs.PathAddPublisherRes{Err: err}
+			return
+		}
 		if pa.conf.AlwaysAvailable {
 			// The publisher's tracks don't match alwaysAvailableTracks. Rebuild the
 			// stream to match what the publisher actually sends and retry.

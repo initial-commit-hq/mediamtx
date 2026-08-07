@@ -1,6 +1,8 @@
 package stream
 
 import (
+	"errors"
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -162,3 +164,23 @@ func TestCloneDescMixedFormats(t *testing.T) {
 // exists for a format a future gortsplib release adds -- it degrades to sharing
 // the original rather than killing the process. If gortsplib gains a format, add
 // a case above and extend allFormats; do not remove the fallback.
+
+// TestIsRTPEncoderNotAvailable pins the classifier path.go uses to decide whether a
+// SubStream.Initialize failure is worth rebuilding for.
+//
+// A track-layout mismatch is fixable by rebuilding from the source's description; a
+// codec with no RTP encoder is not, because the rebuilt stream lacks an encoder for
+// the same reason. Conflating them produced an unbounded warn/error loop on The
+// Dean -- several pairs per second, per path, indefinitely.
+func TestIsRTPEncoderNotAvailable(t *testing.T) {
+	generic := &format.Generic{PayloadTyp: 96, RTPMa: "private/90000", FMT: map[string]string{}}
+	require.NoError(t, generic.Init())
+
+	require.True(t, IsRTPEncoderNotAvailable(rtpEncoderNotAvailableError{generic}))
+	require.False(t, IsRTPEncoderNotAvailable(errors.New("some other failure")))
+	require.False(t, IsRTPEncoderNotAvailable(nil))
+
+	// Must survive wrapping, since the error travels up through Initialize.
+	wrapped := fmt.Errorf("initializing sub stream: %w", rtpEncoderNotAvailableError{generic})
+	require.True(t, IsRTPEncoderNotAvailable(wrapped))
+}

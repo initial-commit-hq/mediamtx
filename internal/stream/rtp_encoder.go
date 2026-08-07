@@ -1,6 +1,7 @@
 package stream
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/bluenviron/gortsplib/v5/pkg/format"
@@ -35,6 +36,24 @@ type rtpEncoderNotAvailableError struct {
 
 func (e rtpEncoderNotAvailableError) Error() string {
 	return fmt.Sprintf("RTP encoder not available for format %T", e.format)
+}
+
+// IsRTPEncoderNotAvailable reports whether err is a missing-RTP-encoder error.
+//
+// Exported so path.go can tell apart the two reasons SubStream.Initialize fails on
+// an alwaysAvailable path:
+//
+//   - the source's track LAYOUT differs from alwaysAvailableTracks, which rebuilding
+//     the stream from the source's description does fix;
+//   - the source uses a codec with no RTP encoder at all (Generic, i.e. a codec
+//     gortsplib has no dedicated implementation for), which rebuilding cannot fix,
+//     because the new stream will lack an encoder for exactly the same reason.
+//
+// Retrying the second case produced an unbounded warn/error loop, several lines per
+// second per path.
+func IsRTPEncoderNotAvailable(err error) bool {
+	var target rtpEncoderNotAvailableError
+	return errors.As(err, &target)
 }
 
 type rtpEncoder interface {

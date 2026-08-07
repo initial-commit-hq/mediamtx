@@ -720,10 +720,29 @@ func (s *Stream) RemoveReader(r *Reader) {
 	r.stop()
 
 	for medi, formats := range r.onDatas {
+		// The reader's medias can be stale: RebuildFromDesc replaces s.medias with
+		// freshly cloned *description.Media pointers, while readers added before the
+		// rebuild still reference the old ones. Looking those up yields nil, and
+		// dereferencing it panicked the whole process:
+		//
+		//   panic: runtime error: invalid memory address or nil pointer dereference
+		//     internal/stream/stream.go:726 (*Stream).RemoveReader
+		//     internal/servers/hls.(*muxerInstance).close
+		//
+		// An HLS muxer closing after a rebuild is enough to trigger it, so a single
+		// viewer disconnect took down every path on the node. Skipping absent medias
+		// is correct: the streamMedia they referred to no longer exists, so there is
+		// nothing left to unsubscribe from.
 		sm := s.medias[medi]
+		if sm == nil {
+			continue
+		}
 
 		for forma := range formats {
 			sf := sm.formats[forma]
+			if sf == nil {
+				continue
+			}
 			delete(sf.onDatas, r)
 		}
 	}
