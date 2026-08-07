@@ -423,6 +423,34 @@ func IsRelayable(forma format.Format) bool {
 // and keeping them costs the whole stream. A media is dropped only when NONE of its
 // formats is relayable, so a media that merely mixes supported and unsupported
 // formats keeps the supported ones.
+//
+// The surviving medias are the CALLER'S OWN POINTERS, never copies, and that is
+// load-bearing rather than an optimisation.
+//
+// SubStream.medias is a map keyed on *description.Media, and rtsp.ToStream writes
+// every unit with the pointer it got from the RTSP client:
+//
+//	(*subStream).WriteUnit(cmedi, cforma, ...)   // internal/protocols/rtsp/to_stream.go
+//
+// If this function returns fresh Media values, the stream is keyed on the copies
+// while the writer holds the originals, so ss.medias[media] misses on EVERY packet.
+// WriteUnit then discards them -- silently, because it must tolerate units for
+// genuinely dropped tracks (see its comment). The result is a path that connects,
+// negotiates the right tracks, reports ready/online with correct codec properties,
+// and forwards zero bytes:
+//
+//	Stream #0:0: Video: h264, none, 90k tbr    <- no resolution, nothing decodable
+//	Stream #0:1: Audio: pcm_mulaw, 8000 Hz     <- audio also dead
+//
+// That is exactly what shipped in v1.1.3/v1.1.4 and made the relay unusable on
+// every path where a Generic track was dropped: 5 of 6 cameras on The Dean and 4 of
+// 7 on Orchard Glen delivered 0 KB/s, while the paths that needed NO drop streamed
+// normally. It looked like a camera or codec problem, not a pointer-identity one.
+//
+// Only a media that must actually SHED a format needs a new value, because its
+// Formats slice differs; the writer's units for the removed format are then dropped
+// by WriteUnit, which is correct. A media whose formats all survive is passed
+// through untouched so its identity -- and therefore its packet routing -- holds.
 func FilterRelayableMedias(desc *description.Session) (*description.Session, []format.Format) {
 	var dropped []format.Format
 	medias := make([]*description.Media, 0, len(desc.Medias))
@@ -437,6 +465,11 @@ func FilterRelayableMedias(desc *description.Session) (*description.Session, []f
 			}
 		}
 		if len(formats) == 0 {
+			continue
+		}
+		if len(formats) == len(media.Formats) {
+			// Untouched: reuse the caller's pointer so WriteUnit can still find it.
+			medias = append(medias, media)
 			continue
 		}
 		medias = append(medias, &description.Media{

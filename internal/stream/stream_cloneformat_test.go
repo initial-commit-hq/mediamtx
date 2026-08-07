@@ -5,10 +5,13 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/bluenviron/gortsplib/v5/pkg/description"
 	"github.com/bluenviron/gortsplib/v5/pkg/format"
 	"github.com/bluenviron/mediacommon/v2/pkg/codecs/mpeg4audio"
+	"github.com/bluenviron/mediamtx/internal/conf"
+	"github.com/bluenviron/mediamtx/internal/unit"
 	"github.com/stretchr/testify/require"
 )
 
@@ -252,6 +255,144 @@ func TestFilterRelayableMediasAllUnrelayable(t *testing.T) {
 	filtered, dropped := FilterRelayableMedias(desc)
 	require.Empty(t, filtered.Medias)
 	require.Len(t, dropped, 1)
+}
+
+// TestFilterRelayableMediasPreservesPointerIdentity is the regression test for the
+// bug that made the relay silently forward nothing.
+//
+// SubStream.medias is keyed on *description.Media, and rtsp.ToStream writes every
+// unit with the pointer it received from the RTSP client:
+//
+//	(*subStream).WriteUnit(cmedi, cforma, ...)
+//
+// The original implementation built a fresh Media for every surviving track, so the
+// stream was keyed on copies while the writer held the originals. Every lookup
+// missed, and WriteUnit -- which must tolerate units for genuinely dropped tracks --
+// discarded the packets without a word. Paths reported ready/online with correct
+// codec properties and delivered 0 KB/s.
+//
+// The shape assertions in the tests above all passed against that broken code, which
+// is precisely why this asserts identity instead.
+func TestFilterRelayableMediasPreservesPointerIdentity(t *testing.T) {
+	generic := &format.Generic{PayloadTyp: 98, RTPMa: "private/90000", FMT: map[string]string{}}
+	require.NoError(t, generic.Init())
+
+	video := &description.Media{Type: description.MediaTypeVideo, Formats: []format.Format{
+		&format.H264{PayloadTyp: 96, PacketizationMode: 1},
+	}}
+	audio := &description.Media{Type: description.MediaTypeAudio, Formats: []format.Format{
+		&format.G711{PayloadTyp: 0, MULaw: true, SampleRate: 8000, ChannelCount: 1},
+	}}
+	meta := &description.Media{Type: description.MediaTypeApplication, Formats: []format.Format{generic}}
+
+	desc := &description.Session{Medias: []*description.Media{video, audio, meta}}
+
+	filtered, dropped := FilterRelayableMedias(desc)
+
+	require.Len(t, filtered.Medias, 2)
+	require.Len(t, dropped, 1)
+
+	// The whole point: these must be the SAME pointers the caller passed in, or the
+	// stream cannot route the writer's packets.
+	require.Same(t, video, filtered.Medias[0],
+		"video media must be the caller's own pointer, or WriteUnit cannot find it "+
+			"and every video packet is silently dropped")
+	require.Same(t, audio, filtered.Medias[1],
+		"audio media must be the caller's own pointer")
+}
+
+// A media that sheds one of several formats necessarily needs a new value, since its
+// Formats slice differs -- but the medias AROUND it must still keep their identity.
+// Getting that wrong would reintroduce the same silent loss for their tracks.
+func TestFilterRelayableMediasPartialDropKeepsSiblingIdentity(t *testing.T) {
+	generic := &format.Generic{PayloadTyp: 98, RTPMa: "private/90000", FMT: map[string]string{}}
+	require.NoError(t, generic.Init())
+
+	// video mixes H264 with an unrelayable format, so it must be rebuilt.
+	video := &description.Media{Type: description.MediaTypeVideo, Formats: []format.Format{
+		&format.H264{PayloadTyp: 96, PacketizationMode: 1},
+		generic,
+	}}
+	// audio is untouched, so it must survive by identity.
+	audio := &description.Media{Type: description.MediaTypeAudio, Formats: []format.Format{
+		&format.G711{PayloadTyp: 0, MULaw: true, SampleRate: 8000, ChannelCount: 1},
+	}}
+
+	desc := &description.Session{Medias: []*description.Media{video, audio}}
+	filtered, dropped := FilterRelayableMedias(desc)
+
+	require.Len(t, filtered.Medias, 2)
+	require.Len(t, dropped, 1)
+
+	require.NotSame(t, video, filtered.Medias[0],
+		"a media that sheds a format must be a new value, since its Formats differ")
+	require.Len(t, filtered.Medias[0].Formats, 1)
+	require.Same(t, audio, filtered.Medias[1],
+		"an untouched media must keep its identity even when a sibling is rebuilt")
+}
+
+// The end-to-end proof: build a real AlwaysAvailable stream, run the exact
+// path.go sequence (FilterRelayableMedias -> RebuildFromDesc -> SubStream) and then
+// write a unit using the CLIENT'S media pointer, as rtsp.ToStream does. The unit has
+// to reach a reader.
+//
+// This is the test that actually reproduces the field failure; the identity checks
+// above localise it.
+func TestFilteredStreamRoutesUnitsFromTheOriginalPointers(t *testing.T) {
+	generic := &format.Generic{PayloadTyp: 98, RTPMa: "private/90000", FMT: map[string]string{}}
+	require.NoError(t, generic.Init())
+
+	forma := &format.H264{PayloadTyp: 96, PacketizationMode: 1}
+	// The camera's description: video plus the empty metadata track that started all
+	// of this.
+	video := &description.Media{Type: description.MediaTypeVideo, Formats: []format.Format{forma}}
+	meta := &description.Media{Type: description.MediaTypeApplication, Formats: []format.Format{generic}}
+	cameraDesc := &description.Session{Medias: []*description.Media{video, meta}}
+
+	s := &Stream{
+		AlwaysAvailable:       true,
+		AlwaysAvailableTracks: []conf.AlwaysAvailableTrack{{Codec: conf.CodecH264}},
+		WriteQueueSize:        512,
+		RTPMaxPayloadSize:     1450,
+		ReplaceNTP:            true,
+		Parent:                &nilLogger{},
+	}
+	require.NoError(t, s.Initialize())
+	defer s.Close()
+
+	// Exactly what core/path.go does when the source has an unrelayable track.
+	filtered, dropped := FilterRelayableMedias(cameraDesc)
+	require.Len(t, dropped, 1)
+	require.NoError(t, s.RebuildFromDesc(filtered))
+
+	ss := &SubStream{Stream: s, CurDesc: filtered, UseRTPPackets: false}
+	require.NoError(t, ss.Initialize())
+
+	// A reader subscribes using the STREAM's description, which is what every real
+	// reader does (the RTSP/HLS/WebRTC servers all read s.Desc). The writer, by
+	// contrast, uses the camera's pointers -- and that asymmetry is the whole bug.
+	recv := make(chan struct{})
+	r := &Reader{Parent: &nilLogger{}}
+	r.OnData(s.Desc.Medias[0], s.Desc.Medias[0].Formats[0], func(_ *unit.Unit) error {
+		close(recv)
+		return nil
+	})
+	s.AddReader(r)
+	defer s.RemoveReader(r)
+
+	// Written with the CLIENT's pointer, which is what rtsp.ToStream passes.
+	ss.WriteUnit(video, forma, &unit.Unit{
+		PTS:     30000 * 2,
+		Payload: unit.PayloadH264{{5, 2}}, // IDR
+	})
+
+	select {
+	case <-recv:
+	case <-time.After(3 * time.Second):
+		t.Fatal("the unit never reached the reader: the stream is keyed on copies " +
+			"while the writer holds the camera's own pointers, so every packet is " +
+			"silently dropped")
+	}
 }
 
 // TestIsRelayable spot-checks the classifier both ways.
