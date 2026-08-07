@@ -748,10 +748,20 @@ func (s *Stream) AddReader(r *Reader) {
 	s.readers[r] = struct{}{}
 
 	for medi, formats := range r.onDatas {
+		// Same guard as RemoveReader and WriteUnit: a reader can ask for a media the
+		// stream does not carry -- a track dropped for having no RTP encoder, or a
+		// pointer left stale by RebuildFromDesc. Subscribing is skipped rather than
+		// panicking; there is no streamFormat to deliver from.
 		sm := s.medias[medi]
+		if sm == nil {
+			continue
+		}
 
 		for forma, onData := range formats {
 			sf := sm.formats[forma]
+			if sf == nil {
+				continue
+			}
 			sf.onDatas[r] = onData
 		}
 	}

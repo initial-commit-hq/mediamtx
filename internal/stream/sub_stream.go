@@ -164,6 +164,24 @@ func (ss *SubStream) Initialize() error {
 }
 
 // WriteUnit writes a Unit.
+//
+// Units for tracks the stream does not carry are discarded rather than
+// dereferenced. Two situations produce them, and both used to panic here:
+//
+//   - a track was dropped because it has no RTP encoder (see
+//     FilterRelayableMedias). The RTSP client still subscribes to EVERY track the
+//     camera advertises -- protocols/rtsp.ToStream iterates the client's medias,
+//     not the stream's -- so packets keep arriving for the dropped one:
+//
+//     panic: runtime error: invalid memory address or nil pointer dereference
+//     internal/stream/sub_stream.go:176 (*SubStream).WriteUnit
+//     internal/protocols/rtsp.ToStream.func2
+//
+//   - RebuildFromDesc replaced the media map while a read was in flight, so the
+//     caller holds a media pointer that is no longer present.
+//
+// Silently ignoring is correct: there is no streamFormat to write to, and the
+// alternative -- crashing the process -- takes down every path on the node.
 func (ss *SubStream) WriteUnit(media *description.Media, forma format.Format, u *unit.Unit) {
 	ss.Stream.mutex.RLock()
 	defer ss.Stream.mutex.RUnlock()
@@ -173,7 +191,14 @@ func (ss *SubStream) WriteUnit(media *description.Media, forma format.Format, u 
 	}
 
 	ssm := ss.medias[media]
+	if ssm == nil {
+		return
+	}
+
 	ssf := ssm.formats[forma]
+	if ssf == nil {
+		return
+	}
 
 	ssf.writeUnit(u)
 }
