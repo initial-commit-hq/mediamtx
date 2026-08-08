@@ -4,14 +4,17 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/bluenviron/gortsplib/v5"
 	"github.com/bluenviron/gortsplib/v5/pkg/description"
 	"github.com/bluenviron/gortsplib/v5/pkg/format"
 	"github.com/bluenviron/mediacommon/v2/pkg/codecs/mpeg4audio"
 	"github.com/bluenviron/mediamtx/internal/conf"
 	"github.com/bluenviron/mediamtx/internal/unit"
+	"github.com/pion/rtp"
 	"github.com/stretchr/testify/require"
 )
 
@@ -439,6 +442,176 @@ func TestOfflinePlaceholderToleratesUnsupportedCodec(t *testing.T) {
 	// placeholder even though that placeholder had nothing to emit.
 	ss := &SubStream{Stream: s, CurDesc: cameraDesc, UseRTPPackets: false}
 	require.NoError(t, ss.Initialize())
+}
+
+// A rebuild must not leave the RTSP server stream keyed on the OLD medias.
+//
+// gortsplib looks its own media map up without checking the result:
+//
+//	sm := st.medias[medi]
+//	sf := sm.formats[pkt.PayloadType]   // nil deref when medi is unknown
+//	                                     server_stream.go:374
+//
+// RebuildFromDesc calls cloneDesc, so every *description.Media pointer is new, while
+// the ServerStream was initialized from the previous description. Forwarding a packet
+// for any rebuilt media then panicked and took down every path on the node -- three
+// EOS-OR nodes were crash-looping on this, one at 121 restarts:
+//
+//	panic: runtime error: invalid memory address or nil pointer dereference
+//	  gortsplib.(*ServerStream).WritePacketRTPWithNTP  server_stream.go:374
+//	  stream.(*Stream).writeRTSP                       stream.go:880
+//
+// Writing through a real gortsplib server is the only way to reproduce it, since the
+// nil map entry lives inside the dependency.
+func TestRebuildFromDescDoesNotStrandTheRTSPServerStream(t *testing.T) {
+	forma := &format.H264{PayloadTyp: 96, PacketizationMode: 1}
+
+	// AlwaysAvailable derives Desc from the configured tracks; setting it explicitly is
+	// rejected. This is the shape the relay paths run with.
+	s := &Stream{
+		AlwaysAvailable:       true,
+		AlwaysAvailableTracks: []conf.AlwaysAvailableTrack{{Codec: conf.CodecH264}},
+		WriteQueueSize:        512,
+		RTPMaxPayloadSize:     1450,
+		ReplaceNTP:            true,
+		Parent:                &nilLogger{},
+	}
+	require.NoError(t, s.Initialize())
+	defer s.Close()
+
+	// The media the placeholder description was built from -- the pointer a writer can
+	// still be holding when the rebuild swaps the description out from under it.
+	require.Len(t, s.Desc.Medias, 1)
+	video := s.Desc.Medias[0]
+
+	server := &gortsplib.Server{RTSPAddress: "127.0.0.1:0"}
+	require.NoError(t, server.Start())
+	defer server.Close()
+
+	// A reader attaches, which is what builds the ServerStream from the CURRENT Desc.
+	require.NotNil(t, s.RTSPStream(server))
+
+	// The camera then publishes a different layout -- audio ahead of video, so the
+	// rebuild cannot be mistaken for a no-op -- exactly as core/path.go handles it.
+	audioForma := &format.G711{PayloadTyp: 0, MULaw: true, SampleRate: 8000, ChannelCount: 1}
+	cameraDesc := &description.Session{Medias: []*description.Media{
+		{Type: description.MediaTypeAudio, Formats: []format.Format{audioForma}},
+		{Type: description.MediaTypeVideo, Formats: []format.Format{forma}},
+	}}
+	require.NoError(t, s.RebuildFromDesc(cameraDesc))
+
+	// Re-attach, as the reader that reconnects after the rebuild does.
+	require.NotNil(t, s.RTSPStream(server))
+
+	// Every media of the new shape must be writable. This is the assertion that failed:
+	// the server stream still held the pre-rebuild media, so both of these panicked.
+	require.NotPanics(t, func() {
+		for _, medi := range s.Desc.Medias {
+			s.writeRTSP(medi, []*rtp.Packet{{
+				Header:  rtp.Header{Version: 2, PayloadType: uint8(medi.Formats[0].PayloadType())},
+				Payload: []byte{0x01, 0x02, 0x03},
+			}}, time.Now())
+		}
+	})
+
+	// A pointer left over from the old description must be dropped, not dereferenced:
+	// a write can still be in flight through an old streamFormat when the swap happens.
+	require.NotPanics(t, func() {
+		s.writeRTSP(video, []*rtp.Packet{{
+			Header:  rtp.Header{Version: 2, PayloadType: 96},
+			Payload: []byte{0x01, 0x02, 0x03},
+		}}, time.Now())
+	})
+}
+
+// Rebuilding while writes are in flight must neither deadlock nor panic.
+//
+// This is the real production pattern: the offline placeholder goroutine writes
+// continuously while a flapping camera triggers rebuild after rebuild.
+//
+// It also pins down a deadlock that the first version of the fix would have shipped.
+// writeRTSP runs underneath SubStream.WriteUnit, which holds Stream.mutex for reading,
+// so reading the server streams under RLock made it recursive -- and RWMutex documents
+// that a queued writer (here, RebuildFromDesc) blocks the second RLock forever. The
+// targets are therefore published atomically. Without -race and -timeout this test
+// passes either way, so it is the deadlock, not the assertions, that matters.
+func TestConcurrentRebuildAndWriteRTSP(t *testing.T) {
+	s := &Stream{
+		AlwaysAvailable:       true,
+		AlwaysAvailableTracks: []conf.AlwaysAvailableTrack{{Codec: conf.CodecH264}},
+		WriteQueueSize:        512,
+		RTPMaxPayloadSize:     1450,
+		ReplaceNTP:            true,
+		Parent:                &nilLogger{},
+	}
+	require.NoError(t, s.Initialize())
+	defer s.Close()
+
+	server := &gortsplib.Server{RTSPAddress: "127.0.0.1:0"}
+	require.NoError(t, server.Start())
+	defer server.Close()
+	require.NotNil(t, s.RTSPStream(server))
+
+	forma := &format.H264{PayloadTyp: 96, PacketizationMode: 1}
+
+	// Captured once. Reading s.Desc from these goroutines would race with
+	// RebuildFromDesc writing it -- and in production nothing does that: writers are
+	// handed their media by the streamFormat they belong to.
+	stale := s.Desc.Medias[0]
+	live := &description.Media{Type: description.MediaTypeVideo, Formats: []format.Format{forma}}
+
+	done := make(chan struct{})
+	var wg sync.WaitGroup
+
+	// Two writers, both on pointers no rebuild will ever install: this asserts that a
+	// stale media is dropped rather than dereferenced, under concurrent rebuilds.
+	wg.Add(2)
+	for i := 0; i < 2; i++ {
+		medi := stale
+		if i == 1 {
+			medi = live
+		}
+		go func() {
+			defer wg.Done()
+			for {
+				select {
+				case <-done:
+					return
+				default:
+				}
+				s.writeRTSP(medi, []*rtp.Packet{{
+					Header:  rtp.Header{Version: 2, PayloadType: 96},
+					Payload: []byte{0x01, 0x02, 0x03},
+				}}, time.Now())
+
+				// Real writers are paced by the frame rate. Spinning flat out instead
+				// starves ServerStream.Close(), which needs gortsplib's write lock while
+				// every packet holds its read lock -- a livelock in the test rig, not in
+				// the product.
+				time.Sleep(time.Millisecond)
+			}
+		}()
+	}
+
+	// The flapping camera.
+	for i := 0; i < 25; i++ {
+		medias := []*description.Media{
+			{Type: description.MediaTypeVideo, Formats: []format.Format{forma}},
+		}
+		if i%2 == 0 {
+			medias = append(medias, &description.Media{
+				Type: description.MediaTypeAudio,
+				Formats: []format.Format{
+					&format.G711{PayloadTyp: 0, MULaw: true, SampleRate: 8000, ChannelCount: 1},
+				},
+			})
+		}
+		require.NoError(t, s.RebuildFromDesc(&description.Session{Medias: medias}))
+		require.NotNil(t, s.RTSPStream(server))
+	}
+
+	close(done)
+	wg.Wait()
 }
 
 // TestIsRelayable spot-checks the classifier both ways.

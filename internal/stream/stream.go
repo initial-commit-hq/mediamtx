@@ -521,15 +521,23 @@ type Stream struct {
 	ReplaceNTP            bool
 	Parent                logger.Writer
 
-	offlineDesc          *description.Session
-	mutex                sync.RWMutex
-	subStream            *SubStream
-	offlineSubStream     *offlineSubStream
-	inboundBytes         *uint64
-	outboundBytes        *uint64
-	medias               map[*description.Media]*streamMedia
-	rtspStream           *gortsplib.ServerStream
-	rtspsStream          *gortsplib.ServerStream
+	offlineDesc      *description.Session
+	mutex            sync.RWMutex
+	subStream        *SubStream
+	offlineSubStream *offlineSubStream
+	inboundBytes     *uint64
+	outboundBytes    *uint64
+	medias           map[*description.Media]*streamMedia
+	rtspStream       *gortsplib.ServerStream
+	rtspsStream      *gortsplib.ServerStream
+	// The RTSP targets as writeRTSP sees them, published atomically.
+	//
+	// writeRTSP CANNOT take s.mutex: it runs under SubStream.WriteUnit, which already
+	// holds it for reading, and recursive RLock deadlocks as soon as a writer queues up
+	// between the two (sync.RWMutex: "if a goroutine holds a RWMutex for reading and
+	// another goroutine might call Lock, no goroutine should expect to be able to
+	// acquire a read lock until the initial read lock is released").
+	rtspTargets          atomic.Pointer[rtspTargets]
 	readers              map[*Reader]struct{}
 	inboundFramesInError *errordumper.Dumper
 
@@ -646,6 +654,30 @@ func (s *Stream) RebuildFromDesc(desc *description.Session) error {
 		panic("should not happen")
 	}
 
+	// Discard the RTSP server streams before replacing the description.
+	//
+	// They were built by gortsplib from the PREVIOUS s.Desc, and cloneDesc below
+	// allocates brand new *description.Media pointers. gortsplib keys its own media
+	// map by that pointer and does not check the lookup:
+	//
+	//	sm := st.medias[medi]
+	//	sf := sm.formats[pkt.PayloadType]   // nil deref when medi is unknown
+	//	                                     server_stream.go:374
+	//
+	// So once the rebuild completed, the first packet forwarded for any new media
+	// panicked and took down every path on the node -- three EOS-OR nodes were
+	// crash-looping on this, one at 121 restarts.
+	//
+	// Dropping the streams here is what actually resolves it: RTSPStream() builds
+	// them lazily, so the next reader gets one initialized from the new Desc, with a
+	// media map that matches. Merely skipping unknown medias at write time would stop
+	// the panic while permanently blackholing the rebuilt tracks -- and RTSP is how
+	// nimble consumes the relay, so that would trade a crash for a silent dead feed.
+	//
+	// Any RTSP reader attached to the old shape is torn down and reconnects, which is
+	// unavoidable: the tracks it negotiated no longer exist.
+	s.closeRTSPStreams()
+
 	// Stop the current offline sub-stream.
 	if s.offlineSubStream != nil {
 		s.offlineSubStream.close(false)
@@ -736,6 +768,53 @@ func (s *Stream) InboundFramesInError() uint64 {
 	return s.inboundFramesInError.Get()
 }
 
+// rtspTargets is the immutable view of the RTSP server streams used by writeRTSP.
+//
+// Each stream is paired with the media set it was initialized from, because gortsplib
+// looks its own media map up without checking the result and panics on an unknown
+// media. It exposes no accessor for that map, so it is mirrored here.
+type rtspTargets struct {
+	rtspStream  *gortsplib.ServerStream
+	rtspMedias  map[*description.Media]struct{}
+	rtspsStream *gortsplib.ServerStream
+	rtspsMedias map[*description.Media]struct{}
+}
+
+// publishRTSPTargets refreshes the atomic view. Callers must hold s.mutex.
+func (s *Stream) publishRTSPTargets() {
+	t := &rtspTargets{rtspStream: s.rtspStream, rtspsStream: s.rtspsStream}
+	if s.rtspStream != nil {
+		t.rtspMedias = mediaSet(s.rtspStream.Desc)
+	}
+	if s.rtspsStream != nil {
+		t.rtspsMedias = mediaSet(s.rtspsStream.Desc)
+	}
+	s.rtspTargets.Store(t)
+}
+
+// closeRTSPStreams detaches and closes the RTSP/RTSPS server streams, so that the
+// next reader causes them to be rebuilt from the current s.Desc.
+//
+// The pointers are cleared while holding the lock, but Close() is called outside it:
+// closing cascades into ServerSession.Close() for every reader, and those sessions
+// unwind through paths that take this same mutex.
+func (s *Stream) closeRTSPStreams() {
+	s.mutex.Lock()
+	rtspStream := s.rtspStream
+	rtspsStream := s.rtspsStream
+	s.rtspStream = nil
+	s.rtspsStream = nil
+	s.publishRTSPTargets()
+	s.mutex.Unlock()
+
+	if rtspStream != nil {
+		rtspStream.Close()
+	}
+	if rtspsStream != nil {
+		rtspsStream.Close()
+	}
+}
+
 // RTSPStream returns the RTSP stream.
 func (s *Stream) RTSPStream(server *gortsplib.Server) *gortsplib.ServerStream {
 	s.mutex.Lock()
@@ -750,6 +829,7 @@ func (s *Stream) RTSPStream(server *gortsplib.Server) *gortsplib.ServerStream {
 		if err != nil {
 			panic(err)
 		}
+		s.publishRTSPTargets()
 	}
 	return s.rtspStream
 }
@@ -768,6 +848,7 @@ func (s *Stream) RTSPSStream(server *gortsplib.Server) *gortsplib.ServerStream {
 		if err != nil {
 			panic(err)
 		}
+		s.publishRTSPTargets()
 	}
 	return s.rtspsStream
 }
@@ -875,15 +956,41 @@ func (s *Stream) updateLastTime(pts time.Duration) {
 }
 
 func (s *Stream) writeRTSP(medi *description.Media, pkts []*rtp.Packet, ntp time.Time) {
-	if s.rtspStream != nil {
-		for _, pkt := range pkts {
-			s.rtspStream.WritePacketRTPWithNTP(medi, pkt, ntp) //nolint:errcheck
+	// Loaded atomically rather than under s.mutex, which this goroutine already holds
+	// for reading via SubStream.WriteUnit -- see the rtspTargets field comment.
+	t := s.rtspTargets.Load()
+	if t == nil {
+		return
+	}
+
+	// The membership tests cover the window RebuildFromDesc cannot close on its own: a
+	// write already in flight through an old streamFormat still carries a media pointer
+	// from the previous description, and the replacement server stream knows nothing
+	// about it. Only genuinely stale pointers are rejected here -- medias belonging to
+	// the current shape are present, so this drops nothing a reader could receive.
+	if t.rtspStream != nil {
+		if _, ok := t.rtspMedias[medi]; ok {
+			for _, pkt := range pkts {
+				t.rtspStream.WritePacketRTPWithNTP(medi, pkt, ntp) //nolint:errcheck
+			}
 		}
 	}
 
-	if s.rtspsStream != nil {
-		for _, pkt := range pkts {
-			s.rtspsStream.WritePacketRTPWithNTP(medi, pkt, ntp) //nolint:errcheck
+	if t.rtspsStream != nil {
+		if _, ok := t.rtspsMedias[medi]; ok {
+			for _, pkt := range pkts {
+				t.rtspsStream.WritePacketRTPWithNTP(medi, pkt, ntp) //nolint:errcheck
+			}
 		}
 	}
+}
+
+// mediaSet indexes a description's medias by pointer, mirroring how gortsplib keys
+// its own media map.
+func mediaSet(desc *description.Session) map[*description.Media]struct{} {
+	set := make(map[*description.Media]struct{}, len(desc.Medias))
+	for _, medi := range desc.Medias {
+		set[medi] = struct{}{}
+	}
+	return set
 }
