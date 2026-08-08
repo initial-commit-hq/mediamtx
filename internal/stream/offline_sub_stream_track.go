@@ -16,6 +16,7 @@ import (
 	"github.com/bluenviron/mediacommon/v2/pkg/codecs/mpeg4audio"
 	mcodecs "github.com/bluenviron/mediacommon/v2/pkg/formats/mp4/codecs"
 	"github.com/bluenviron/mediacommon/v2/pkg/formats/pmp4"
+	"github.com/bluenviron/mediamtx/internal/logger"
 	"github.com/bluenviron/mediamtx/internal/unit"
 )
 
@@ -233,7 +234,29 @@ func (t *offlineSubStreamTrack) run() {
 			buf = offlineH264
 
 		default:
-			panic("should not happen")
+			// No placeholder asset exists for this codec, so this track simply has
+			// nothing to emit while the source is offline. Return instead of
+			// panicking: a panic here kills the whole process, and with it EVERY
+			// path on the node.
+			//
+			// Reachable in normal operation, not just in theory. The placeholder
+			// tracks are built from alwaysAvailableTracks, which only permits the
+			// four codecs above -- but RebuildFromDesc replaces that description
+			// with whatever the CAMERA publishes, and cameras publish plenty more.
+			// Lincoln Place (EOS-OR) has an M-JPEG camera and crash-looped 18 times:
+			//
+			//	WAR [path b3344726] source track layout differs from configured
+			//	    alwaysAvailableTracks (wants to publish [M-JPEG Generic] ...)
+			//	panic: should not happen
+			//	  offline_sub_stream_track.go:236
+			//
+			// The cost of returning is only that this one track goes silent between
+			// camera disconnects, which is exactly what it would have been had the
+			// codec never been listed. The cost of panicking is the node.
+			t.subStream.Stream.Parent.Log(logger.Debug,
+				"no offline placeholder for %T; leaving this track silent while the "+
+					"source is offline", t.format)
+			return
 		}
 
 		r := bytes.NewReader(buf)

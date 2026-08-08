@@ -395,6 +395,52 @@ func TestFilteredStreamRoutesUnitsFromTheOriginalPointers(t *testing.T) {
 	}
 }
 
+// A codec with no offline placeholder asset must not kill the process.
+//
+// The placeholder tracks are built from alwaysAvailableTracks, which only permits
+// AV1/VP9/H265/H264 -- so the generator's `default: panic("should not happen")` looked
+// unreachable. It is not: RebuildFromDesc replaces that description with whatever the
+// CAMERA publishes, and cameras publish plenty more. Lincoln Place (EOS-OR) has an
+// M-JPEG camera and crash-looped 18 times:
+//
+//	WAR [path b3344726] wants to publish [M-JPEG Generic] ...; rebuilding stream
+//	panic: should not happen  offline_sub_stream_track.go:236
+//
+// A panic in that goroutine takes down every path on the node, so the track is left
+// silent instead -- the same outcome as if the codec had never been listed.
+func TestOfflinePlaceholderToleratesUnsupportedCodec(t *testing.T) {
+	mjpeg := &format.MJPEG{}
+
+	video := &description.Media{Type: description.MediaTypeVideo, Formats: []format.Format{mjpeg}}
+	cameraDesc := &description.Session{Medias: []*description.Media{video}}
+
+	s := &Stream{
+		AlwaysAvailable:       true,
+		AlwaysAvailableTracks: []conf.AlwaysAvailableTrack{{Codec: conf.CodecH264}},
+		WriteQueueSize:        512,
+		RTPMaxPayloadSize:     1450,
+		ReplaceNTP:            true,
+		Parent:                &nilLogger{},
+	}
+	require.NoError(t, s.Initialize())
+	defer s.Close()
+
+	// RebuildFromDesc starts the offline sub-stream for the new shape, which is where
+	// the placeholder goroutine is spawned. Before the fix this panicked and took the
+	// process with it, so reaching the assertion at all is the test.
+	require.NotPanics(t, func() {
+		require.NoError(t, s.RebuildFromDesc(cameraDesc))
+	})
+
+	// Give the placeholder goroutine time to run and (previously) panic.
+	time.Sleep(200 * time.Millisecond)
+
+	// The stream must still be usable: a real source can take over from the
+	// placeholder even though that placeholder had nothing to emit.
+	ss := &SubStream{Stream: s, CurDesc: cameraDesc, UseRTPPackets: false}
+	require.NoError(t, ss.Initialize())
+}
+
 // TestIsRelayable spot-checks the classifier both ways.
 func TestIsRelayable(t *testing.T) {
 	generic := &format.Generic{PayloadTyp: 98, RTPMa: "private/90000", FMT: map[string]string{}}
