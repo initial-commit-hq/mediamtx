@@ -1,0 +1,15 @@
+[package]
+name = "rmtx-record"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Recording to fMP4 / MPEG-TS"
+
+[dependencies]
+chrono = { version = "0.4", features = ["clock"] }
+rmtx-mux = { path = "../rmtx-mux" }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3"

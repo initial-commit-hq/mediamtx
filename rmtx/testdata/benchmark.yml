@@ -1,0 +1,16 @@
+# Minimal config for Go vs Rust benchmark runs (isolated ports).
+api: yes
+apiAddress: :29997
+metrics: yes
+metricsAddress: :29998
+rtsp: yes
+rtspAddress: :28554
+hls: no
+webrtc: no
+rtmp: no
+playback: no
+paths:
+  bench:
+    alwaysAvailable: yes
+    alwaysAvailableTracks:
+      - codec: H264

@@ -1,0 +1,376 @@
+{
+  "source": "api/openapi.yaml",
+  "baseUrlDefault": "http://localhost:9997",
+  "routeCount": 41,
+  "routes": [
+    {
+      "method": "GET",
+      "path": "/v3/info",
+      "operationId": "info",
+      "summary": "returns informations about the instance.",
+      "tags": [
+        "General"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/v3/auth/jwks/refresh",
+      "operationId": "authJwksRefresh",
+      "summary": "Manually refreshes the JWT JWKS.",
+      "tags": [
+        "Authentication"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/v3/config/global/get",
+      "operationId": "configGlobalGet",
+      "summary": "returns the global configuration.",
+      "tags": [
+        "Configuration"
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/v3/config/global/patch",
+      "operationId": "configGlobalSet",
+      "summary": "patches the global configuration.",
+      "tags": [
+        "Configuration"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/v3/config/pathdefaults/get",
+      "operationId": "configPathDefaultsGet",
+      "summary": "returns the default path configuration.",
+      "tags": [
+        "Configuration"
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/v3/config/pathdefaults/patch",
+      "operationId": "configPathDefaultsPatch",
+      "summary": "patches the default path configuration.",
+      "tags": [
+        "Configuration"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/v3/config/paths/list",
+      "operationId": "configPathsList",
+      "summary": "returns all path configurations.",
+      "tags": [
+        "Configuration"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/v3/config/paths/get/{name}",
+      "operationId": "configPathsGet",
+      "summary": "returns a path configuration.",
+      "tags": [
+        "Configuration"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/v3/config/paths/add/{name}",
+      "operationId": "configPathsAdd",
+      "summary": "adds a path configuration.",
+      "tags": [
+        "Configuration"
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/v3/config/paths/patch/{name}",
+      "operationId": "configPathsPatch",
+      "summary": "patches a path configuration.",
+      "tags": [
+        "Configuration"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/v3/config/paths/replace/{name}",
+      "operationId": "configPathsReplace",
+      "summary": "replaces all values of a path configuration.",
+      "tags": [
+        "Configuration"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/v3/config/paths/delete/{name}",
+      "operationId": "configPathsDelete",
+      "summary": "removes a path configuration.",
+      "tags": [
+        "Configuration"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/v3/hlsmuxers/list",
+      "operationId": "hlsMuxersList",
+      "summary": "returns all HLS muxers.",
+      "tags": [
+        "HLS"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/v3/hlsmuxers/get/{name}",
+      "operationId": "hlsMuxersGet",
+      "summary": "returns a HLS muxer.",
+      "tags": [
+        "HLS"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/v3/paths/list",
+      "operationId": "pathsList",
+      "summary": "returns all paths.",
+      "tags": [
+        "Paths"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/v3/paths/get/{name}",
+      "operationId": "pathsGet",
+      "summary": "returns a path.",
+      "tags": [
+        "Paths"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/v3/rtspconns/list",
+      "operationId": "rtspConnsList",
+      "summary": "returns all RTSP connections.",
+      "tags": [
+        "RTSP"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/v3/rtspconns/get/{id}",
+      "operationId": "rtspConnsGet",
+      "summary": "returns a RTSP connection.",
+      "tags": [
+        "RTSP"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/v3/rtspsessions/list",
+      "operationId": "rtspSessionsList",
+      "summary": "returns all RTSP sessions.",
+      "tags": [
+        "RTSP"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/v3/rtspsessions/get/{id}",
+      "operationId": "rtspSessionsGet",
+      "summary": "returns a RTSP session.",
+      "tags": [
+        "RTSP"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/v3/rtspsessions/kick/{id}",
+      "operationId": "rtspSessionsKick",
+      "summary": "kicks out a RTSP session from the server.",
+      "tags": [
+        "RTSP"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/v3/rtspsconns/list",
+      "operationId": "rtspsConnsList",
+      "summary": "returns all RTSPS connections.",
+      "tags": [
+        "RTSP"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/v3/rtspsconns/get/{id}",
+      "operationId": "rtspsConnsGet",
+      "summary": "returns a RTSPS connection.",
+      "tags": [
+        "RTSP"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/v3/rtspssessions/list",
+      "operationId": "rtspsSessionsList",
+      "summary": "returns all RTSPS sessions.",
+      "tags": [
+        "RTSP"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/v3/rtspssessions/get/{id}",
+      "operationId": "rtspsSessionsGet",
+      "summary": "returns a RTSPS session.",
+      "tags": [
+        "RTSP"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/v3/rtspssessions/kick/{id}",
+      "operationId": "rtspsSessionsKick",
+      "summary": "kicks out a RTSPS session from the server.",
+      "tags": [
+        "RTSP"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/v3/rtmpconns/list",
+      "operationId": "rtmpConnsList",
+      "summary": "returns all RTMP connections.",
+      "tags": [
+        "RTMP"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/v3/rtmpconns/get/{id}",
+      "operationId": "rtmpConnectionsGet",
+      "summary": "returns a RTMP connection.",
+      "tags": [
+        "RTMP"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/v3/rtmpconns/kick/{id}",
+      "operationId": "rtmpConnsKick",
+      "summary": "kicks out a RTMP connection from the server.",
+      "tags": [
+        "RTMP"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/v3/rtmpsconns/list",
+      "operationId": "rtmpsConnsList",
+      "summary": "returns all RTMPS connections.",
+      "tags": [
+        "RTMP"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/v3/rtmpsconns/get/{id}",
+      "operationId": "rtmpsConnectionsGet",
+      "summary": "returns a RTMPS connection.",
+      "tags": [
+        "RTMP"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/v3/rtmpsconns/kick/{id}",
+      "operationId": "rtmpsConnsKick",
+      "summary": "kicks out a RTMPS connection from the server.",
+      "tags": [
+        "RTMP"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/v3/srtconns/list",
+      "operationId": "srtConnsList",
+      "summary": "returns all SRT connections.",
+      "tags": [
+        "SRT"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/v3/srtconns/get/{id}",
+      "operationId": "srtConnsGet",
+      "summary": "returns a SRT connection.",
+      "tags": [
+        "SRT"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/v3/srtconns/kick/{id}",
+      "operationId": "srtConnsKick",
+      "summary": "kicks out a SRT connection from the server.",
+      "tags": [
+        "SRT"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/v3/webrtcsessions/list",
+      "operationId": "webrtcSessionsList",
+      "summary": "returns all WebRTC sessions.",
+      "tags": [
+        "WebRTC"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/v3/webrtcsessions/get/{id}",
+      "operationId": "webrtcSessionsGet",
+      "summary": "returns a WebRTC session.",
+      "tags": [
+        "WebRTC"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/v3/webrtcsessions/kick/{id}",
+      "operationId": "webrtcSessionsKick",
+      "summary": "kicks out a WebRTC session from the server.",
+      "tags": [
+        "WebRTC"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/v3/recordings/list",
+      "operationId": "recordingsList",
+      "summary": "returns all recordings, splitted by path.",
+      "tags": [
+        "Recordings"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/v3/recordings/get/{name}",
+      "operationId": "recordingsGet",
+      "summary": "returns recordings of a path.",
+      "tags": [
+        "Recordings"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/v3/recordings/deletesegment",
+      "operationId": "recordingsDeleteSegment",
+      "summary": "deletes a recording segment.",
+      "tags": [
+        "Recordings"
+      ]
+    }
+  ]
+}

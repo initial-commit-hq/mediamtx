@@ -1,0 +1,144 @@
+{
+  "$comment": "MediaMTX hook environment-variable contract, extracted from internal/hooks/*, internal/core/path.go ExternalCmdEnv(), docs/4-other/17-hooks.md, and path_test.go. rmtx must inject the same keys so existing operator scripts keep working.",
+  "sourceFiles": [
+    "docs/4-other/17-hooks.md",
+    "internal/core/path.go",
+    "internal/hooks/on_connect.go",
+    "internal/hooks/on_init.go",
+    "internal/hooks/on_demand.go",
+    "internal/hooks/on_ready.go",
+    "internal/hooks/on_read.go",
+    "internal/hooks/on_source_connect.go",
+    "internal/externalcmd/cmd.go"
+  ],
+  "notes": [
+    "Commands are expanded with os.Expand against the injected env map before exec (Linux and Windows).",
+    "The full process environment is inherited; MTX_* / RTSP_* / G* keys are appended.",
+    "Restart flags pause 5s between restarts (externalcmd.restartPause).",
+    "Hooks that stay alive for a session (runOnConnect, runOnInit, runOnDemand, runOnReady, runOnSourceConnect, runOnRead) are terminated with SIGINT when the paired lifecycle ends.",
+    "Naming note vs early rmtx brief: upstream has no runOnPublish/runOnUnpublish. Use runOnReady/runOnNotReady and/or runOnSourceConnect/runOnSourceDisconnect."
+  ],
+  "basePathEnv": {
+    "description": "Injected by path.ExternalCmdEnv() for all path-scoped hooks",
+    "vars": [
+      { "name": "MTX_PATH", "description": "Path name" },
+      { "name": "RTSP_PATH", "description": "Deprecated alias of MTX_PATH; still set for compatibility" },
+      { "name": "RTSP_PORT", "description": "RTSP server listen port (host stripped from rtspAddress)" },
+      { "name": "G1", "description": "First regex capture group when path conf name is a regexp; G2, G3, ... for further groups" }
+    ]
+  },
+  "hooks": [
+    {
+      "configKey": "runOnConnect",
+      "scope": "global",
+      "restartKey": "runOnConnectRestart",
+      "pairedExitHook": "runOnDisconnect",
+      "lifecycle": "started on client connect; SIGINT on disconnect",
+      "env": ["MTX_CONN_TYPE", "MTX_CONN_ID", "RTSP_PORT"]
+    },
+    {
+      "configKey": "runOnDisconnect",
+      "scope": "global",
+      "restartKey": null,
+      "lifecycle": "fire-and-forget on disconnect",
+      "env": ["MTX_CONN_TYPE", "MTX_CONN_ID", "RTSP_PORT"]
+    },
+    {
+      "configKey": "runOnInit",
+      "scope": "path",
+      "restartKey": "runOnInitRestart",
+      "lifecycle": "started when path is initialized; not allowed on regexp paths",
+      "env": ["MTX_PATH", "RTSP_PATH", "RTSP_PORT", "G*"]
+    },
+    {
+      "configKey": "runOnDemand",
+      "scope": "path",
+      "restartKey": "runOnDemandRestart",
+      "timeoutKeys": ["runOnDemandStartTimeout", "runOnDemandCloseAfter"],
+      "pairedExitHook": "runOnUnDemand",
+      "lifecycle": "started when a reader requests a path with no publisher; SIGINT when no readers remain",
+      "env": ["MTX_PATH", "MTX_QUERY", "RTSP_PATH", "RTSP_PORT", "G*"]
+    },
+    {
+      "configKey": "runOnUnDemand",
+      "scope": "path",
+      "restartKey": null,
+      "lifecycle": "fire-and-forget when no readers remain",
+      "env": ["MTX_PATH", "MTX_QUERY", "RTSP_PATH", "RTSP_PORT", "G*"]
+    },
+    {
+      "configKey": "runOnReady",
+      "scope": "path",
+      "restartKey": "runOnReadyRestart",
+      "pairedExitHook": "runOnNotReady",
+      "lifecycle": "started when stream is ready to read; SIGINT when not ready",
+      "env": ["MTX_PATH", "MTX_QUERY", "MTX_SOURCE_TYPE", "MTX_SOURCE_ID", "RTSP_PATH", "RTSP_PORT", "G*"]
+    },
+    {
+      "configKey": "runOnNotReady",
+      "scope": "path",
+      "restartKey": null,
+      "lifecycle": "fire-and-forget when stream is no longer available",
+      "env": ["MTX_PATH", "MTX_QUERY", "MTX_SOURCE_TYPE", "MTX_SOURCE_ID", "RTSP_PATH", "RTSP_PORT", "G*"]
+    },
+    {
+      "configKey": "runOnSourceConnect",
+      "scope": "path",
+      "restartKey": "runOnSourceConnectRestart",
+      "pairedExitHook": "runOnSourceDisconnect",
+      "lifecycle": "started when a source/publisher connects; SIGINT on disconnect",
+      "env": ["MTX_PATH", "MTX_SOURCE_TYPE", "MTX_SOURCE_ID", "RTSP_PATH", "RTSP_PORT", "G*"]
+    },
+    {
+      "configKey": "runOnSourceDisconnect",
+      "scope": "path",
+      "restartKey": null,
+      "lifecycle": "fire-and-forget when source disconnects",
+      "env": ["MTX_PATH", "MTX_SOURCE_TYPE", "MTX_SOURCE_ID", "RTSP_PATH", "RTSP_PORT", "G*"]
+    },
+    {
+      "configKey": "runOnRead",
+      "scope": "path",
+      "restartKey": "runOnReadRestart",
+      "pairedExitHook": "runOnUnread",
+      "lifecycle": "started when a client starts reading; SIGINT when it stops",
+      "env": ["MTX_PATH", "MTX_QUERY", "MTX_READER_TYPE", "MTX_READER_ID", "RTSP_PATH", "RTSP_PORT", "G*"]
+    },
+    {
+      "configKey": "runOnUnread",
+      "scope": "path",
+      "restartKey": null,
+      "lifecycle": "fire-and-forget when a client stops reading",
+      "env": ["MTX_PATH", "MTX_QUERY", "MTX_READER_TYPE", "MTX_READER_ID", "RTSP_PATH", "RTSP_PORT", "G*"]
+    },
+    {
+      "configKey": "runOnRecordSegmentCreate",
+      "scope": "path",
+      "restartKey": null,
+      "lifecycle": "fire-and-forget when a recording segment file is created",
+      "env": ["MTX_PATH", "MTX_SEGMENT_PATH", "RTSP_PATH", "RTSP_PORT", "G*"]
+    },
+    {
+      "configKey": "runOnRecordSegmentComplete",
+      "scope": "path",
+      "restartKey": null,
+      "lifecycle": "fire-and-forget when a recording segment is complete",
+      "env": ["MTX_PATH", "MTX_SEGMENT_PATH", "MTX_SEGMENT_DURATION", "RTSP_PATH", "RTSP_PORT", "G*"]
+    }
+  ],
+  "envVarCatalog": [
+    { "name": "MTX_PATH", "type": "string", "setBy": ["path-scoped hooks"] },
+    { "name": "RTSP_PATH", "type": "string", "deprecated": true, "setBy": ["path-scoped hooks"] },
+    { "name": "RTSP_PORT", "type": "string", "setBy": ["all hooks that know RTSP listen address"] },
+    { "name": "MTX_QUERY", "type": "string", "setBy": ["runOnDemand", "runOnUnDemand", "runOnReady", "runOnNotReady", "runOnRead", "runOnUnread"] },
+    { "name": "MTX_CONN_TYPE", "type": "string", "setBy": ["runOnConnect", "runOnDisconnect"] },
+    { "name": "MTX_CONN_ID", "type": "string", "setBy": ["runOnConnect", "runOnDisconnect"] },
+    { "name": "MTX_SOURCE_TYPE", "type": "string", "setBy": ["runOnReady", "runOnNotReady", "runOnSourceConnect", "runOnSourceDisconnect"] },
+    { "name": "MTX_SOURCE_ID", "type": "string", "setBy": ["runOnReady", "runOnNotReady", "runOnSourceConnect", "runOnSourceDisconnect"] },
+    { "name": "MTX_READER_TYPE", "type": "string", "setBy": ["runOnRead", "runOnUnread"] },
+    { "name": "MTX_READER_ID", "type": "string", "setBy": ["runOnRead", "runOnUnread"] },
+    { "name": "MTX_SEGMENT_PATH", "type": "string", "setBy": ["runOnRecordSegmentCreate", "runOnRecordSegmentComplete"] },
+    { "name": "MTX_SEGMENT_DURATION", "type": "string", "description": "Seconds as float text (strconv FormatFloat)", "setBy": ["runOnRecordSegmentComplete"] },
+    { "name": "G1..Gn", "type": "string", "setBy": ["path-scoped hooks when path conf is a regexp"] }
+  ]
+}

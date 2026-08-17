@@ -1,0 +1,53 @@
+{
+  "$comment": "Subset of the Control API that the in-repo MediaMTX GUI actually calls. Full parity still requires implementing all of openapi.yaml; this is the Phase 4 acceptance minimum.",
+  "sources": [
+    "gui/composables/useMediaMtx.ts",
+    "gui/mediamtx-viewer.html",
+    "gui/components/CameraCell.vue",
+    "gui/serve.mjs"
+  ],
+  "defaults": {
+    "apiPort": "9997",
+    "webrtcPort": "8889",
+    "hlsPort": "8899"
+  },
+  "controlApiRequired": [
+    {
+      "method": "GET",
+      "path": "/v3/paths/list",
+      "responseShapeNotes": "Expects JSON with items[] (or legacy paths[]). Each item needs name (or id)."
+    },
+    {
+      "method": "GET",
+      "path": "/v3/config/paths/list",
+      "responseShapeNotes": "Expects JSON with items[]."
+    },
+    {
+      "method": "POST",
+      "path": "/v3/config/paths/add/{name}",
+      "contentType": "application/json",
+      "responseShapeNotes": "2xx on success; error body text shown to user."
+    },
+    {
+      "method": "PATCH",
+      "path": "/v3/config/paths/patch/{name}",
+      "contentType": "application/json"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v3/config/paths/delete/{name}"
+    }
+  ],
+  "nonApiSurfacesUsedByGui": [
+    {
+      "kind": "HLS playlist",
+      "urlTemplate": "http://{host}:{hlsPort}/{name}/index.m3u8"
+    },
+    {
+      "kind": "WHEP",
+      "urlTemplate": "http://{host}:{webrtcPort}/{name}/whep",
+      "notes": "CameraCell.vue POSTs SDP offer to this URL for playback."
+    }
+  ],
+  "corsNotes": "GUI is often served from a different origin/port than the API (see gui/serve.mjs proxy). rmtx must honor apiAllowOrigins like MediaMTX."
+}

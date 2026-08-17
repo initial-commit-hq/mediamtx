@@ -1,0 +1,21 @@
+[package]
+name = "rmtx-metrics"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Prometheus-compatible metrics endpoint"
+
+[dependencies]
+axum = { workspace = true }
+metrics = "0.24.6"
+metrics-exporter-prometheus = "0.18.3"
+rmtx-path = { path = "../rmtx-path" }
+serde = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+http-body-util = "0.1"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
+tower = { version = "0.5", features = ["util"] }

@@ -1,0 +1,27 @@
+[package]
+name = "rmtx-servers-webrtc"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "WebRTC WHIP/WHEP server"
+
+[features]
+default = []
+webrtc-rs = ["dep:webrtc", "dep:async-trait"]
+
+[dependencies]
+axum = { workspace = true }
+async-trait = { workspace = true, optional = true }
+rmtx-path = { path = "../rmtx-path" }
+rmtx-stream = { path = "../rmtx-stream" }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+webrtc = { version = "0.21.0-alpha.1", optional = true, default-features = true, features = ["runtime-tokio"] }
+
+[dev-dependencies]
+http-body-util = "0.1"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
+rmtx-path = { path = "../rmtx-path" }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+tower = { version = "0.5", features = ["util"] }

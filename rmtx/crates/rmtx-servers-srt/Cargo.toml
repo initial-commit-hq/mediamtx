@@ -1,0 +1,10 @@
+[package]
+name = "rmtx-servers-srt"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "SRT server (libsrt FFI or ffmpeg TBD)"
+
+[dependencies]
+thiserror = { workspace = true }
+tracing = { workspace = true }

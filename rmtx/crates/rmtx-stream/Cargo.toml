@@ -1,0 +1,18 @@
+[package]
+name = "rmtx-stream"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Shared media stream fan-out"
+
+[dependencies]
+bytes = { workspace = true }
+rmtx-conf = { path = "../rmtx-conf" }
+rmtx-path = { path = "../rmtx-path" }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["rt", "sync", "time"] }
+tracing = { workspace = true }
+
+[dev-dependencies]
+rmtx-conf = { path = "../rmtx-conf" }
+tokio = { workspace = true, features = ["macros", "rt", "sync"] }

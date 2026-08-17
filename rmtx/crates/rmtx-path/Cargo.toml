@@ -1,0 +1,22 @@
+[package]
+name = "rmtx-path"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Path registry, pub/sub bus, always-available"
+
+[dependencies]
+chrono = { version = "0.4", features = ["serde"] }
+parking_lot = "0.12"
+rmtx-conf = { path = "../rmtx-conf" }
+rmtx-hooks = { path = "../rmtx-hooks" }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+rmtx-record = { path = "../rmtx-record" }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+tempfile = "3"
+tokio = { workspace = true }

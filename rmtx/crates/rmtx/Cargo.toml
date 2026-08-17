@@ -1,0 +1,31 @@
+[package]
+name = "rmtx"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "MediaMTX-compatible media server (Rust port)"
+
+[[bin]]
+name = "rmtx"
+path = "src/main.rs"
+
+[dependencies]
+rmtx-conf = { path = "../rmtx-conf" }
+rmtx-api = { path = "../rmtx-api" }
+rmtx-hooks = { path = "../rmtx-hooks" }
+rmtx-path = { path = "../rmtx-path" }
+rmtx-staticsources = { path = "../rmtx-staticsources" }
+rmtx-metrics = { path = "../rmtx-metrics" }
+rmtx-servers-rtsp = { path = "../rmtx-servers-rtsp" }
+rmtx-servers-rtmp = { path = "../rmtx-servers-rtmp" }
+rmtx-servers-hls = { path = "../rmtx-servers-hls" }
+rmtx-servers-webrtc = { path = "../rmtx-servers-webrtc" }
+rmtx-playback = { path = "../rmtx-playback" }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+[features]
+default = []
+xiu-rtmp = ["rmtx-servers-rtmp/xiu-rtmp"]
+webrtc-rs = ["rmtx-servers-webrtc/webrtc-rs"]

@@ -665,14 +665,13 @@ func (s *Stream) RebuildFromDesc(desc *description.Session) error {
 	//	                                     server_stream.go:374
 	//
 	// So once the rebuild completed, the first packet forwarded for any new media
-	// panicked and took down every path on the node -- three EOS-OR nodes were
-	// crash-looping on this, one at 121 restarts.
+	// panicked and took down every path on the node.
 	//
 	// Dropping the streams here is what actually resolves it: RTSPStream() builds
 	// them lazily, so the next reader gets one initialized from the new Desc, with a
 	// media map that matches. Merely skipping unknown medias at write time would stop
-	// the panic while permanently blackholing the rebuilt tracks -- and RTSP is how
-	// nimble consumes the relay, so that would trade a crash for a silent dead feed.
+	// the panic while permanently blackholing the rebuilt tracks — RTSP relay readers
+	// would then see a silent dead feed instead of a crash.
 	//
 	// Any RTSP reader attached to the old shape is torn down and reconnects, which is
 	// unavoidable: the tracks it negotiated no longer exist.

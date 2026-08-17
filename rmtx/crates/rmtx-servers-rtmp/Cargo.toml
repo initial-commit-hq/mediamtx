@@ -1,0 +1,25 @@
+[package]
+name = "rmtx-servers-rtmp"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "RTMP server (Xiu-based)"
+
+[features]
+default = []
+# Harlanc RTMP stack: real handshake via ServerSession + StreamsHub.
+xiu-rtmp = ["dep:rtmp", "dep:streamhub"]
+
+[dependencies]
+rtmp = { version = "0.6", optional = true }
+streamhub = { version = "0.2", optional = true }
+rmtx-path = { path = "../rmtx-path" }
+rmtx-staticsources = { path = "../rmtx-staticsources" }
+serde = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+tokio = { workspace = true }

@@ -1,0 +1,24 @@
+[package]
+name = "rmtx-servers-hls"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "HLS / LL-HLS server"
+
+[dependencies]
+axum = { workspace = true }
+bytes = { workspace = true }
+parking_lot = "0.12"
+rmtx-path = { path = "../rmtx-path" }
+rmtx-mux = { path = "../rmtx-mux" }
+rmtx-stream = { path = "../rmtx-stream" }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+http-body-util = "0.1"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
+rmtx-path = { path = "../rmtx-path" }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+tower = { version = "0.5", features = ["util"] }

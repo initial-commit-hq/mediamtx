@@ -403,12 +403,8 @@ func TestFilteredStreamRoutesUnitsFromTheOriginalPointers(t *testing.T) {
 // The placeholder tracks are built from alwaysAvailableTracks, which only permits
 // AV1/VP9/H265/H264 -- so the generator's `default: panic("should not happen")` looked
 // unreachable. It is not: RebuildFromDesc replaces that description with whatever the
-// CAMERA publishes, and cameras publish plenty more. Lincoln Place (EOS-OR) has an
-// M-JPEG camera and crash-looped 18 times:
-//
-//	WAR [path b3344726] wants to publish [M-JPEG Generic] ...; rebuilding stream
-//	panic: should not happen  offline_sub_stream_track.go:236
-//
+// camera publishes, and cameras publish plenty more (including codecs with no
+// placeholder asset).
 // A panic in that goroutine takes down every path on the node, so the track is left
 // silent instead -- the same outcome as if the codec had never been listed.
 func TestOfflinePlaceholderToleratesUnsupportedCodec(t *testing.T) {
@@ -454,13 +450,7 @@ func TestOfflinePlaceholderToleratesUnsupportedCodec(t *testing.T) {
 //
 // RebuildFromDesc calls cloneDesc, so every *description.Media pointer is new, while
 // the ServerStream was initialized from the previous description. Forwarding a packet
-// for any rebuilt media then panicked and took down every path on the node -- three
-// EOS-OR nodes were crash-looping on this, one at 121 restarts:
-//
-//	panic: runtime error: invalid memory address or nil pointer dereference
-//	  gortsplib.(*ServerStream).WritePacketRTPWithNTP  server_stream.go:374
-//	  stream.(*Stream).writeRTSP                       stream.go:880
-//
+// for any rebuilt media then panicked and took down every path on the node:
 // Writing through a real gortsplib server is the only way to reproduce it, since the
 // nil map entry lives inside the dependency.
 func TestRebuildFromDescDoesNotStrandTheRTSPServerStream(t *testing.T) {

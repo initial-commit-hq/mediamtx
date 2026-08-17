@@ -1,0 +1,25 @@
+[package]
+name = "rmtx-servers-rtsp"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "RTSP server and Retina-based client ingest"
+
+[features]
+default = ["retina"]
+retina = ["dep:retina", "dep:futures"]
+
+[dependencies]
+async-trait = "0.1"
+bytes = { workspace = true }
+futures = { version = "0.3", optional = true }
+retina = { version = "0.4", optional = true }
+rmtx-path = { path = "../rmtx-path" }
+rmtx-stream = { path = "../rmtx-stream" }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+rmtx-path = { path = "../rmtx-path" }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

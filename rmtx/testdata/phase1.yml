@@ -1,0 +1,24 @@
+api: yes
+apiAddress: :19997
+metrics: yes
+metricsAddress: :19998
+rtsp: yes
+rtspAddress: :18554
+hls: yes
+hlsAddress: :18889
+webrtc: yes
+webrtcAddress: :18890
+rtmp: yes
+rtmpAddress: :11935
+playback: yes
+playbackAddress: :19996
+paths:
+  demo:
+    source: publisher
+  placeholder:
+    alwaysAvailable: yes
+    alwaysAvailableTracks:
+      - codec: H264
+  # optional rtsp if you want — don't require a live camera
+  # cam:
+  #   source: rtsp://127.0.0.1:8554/stream

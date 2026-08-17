@@ -1,0 +1,27 @@
+[package]
+name = "rmtx-api"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Control API (REST) matching api/openapi.yaml"
+
+[dependencies]
+axum = { workspace = true }
+base64 = "0.22"
+rmtx-auth = { path = "../rmtx-auth" }
+rmtx-conf = { path = "../rmtx-conf" }
+rmtx-path = { path = "../rmtx-path" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+time = { version = "0.3", features = ["serde", "formatting", "parsing"] }
+tokio = { workspace = true }
+tower-http = { version = "0.6", features = ["cors"] }
+tracing = { workspace = true }
+
+[dev-dependencies]
+base64 = "0.22"
+http-body-util = "0.1"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
+tokio = { workspace = true }
+tower = { version = "0.5", features = ["util"] }

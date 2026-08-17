@@ -1,0 +1,23 @@
+[package]
+name = "rmtx-staticsources"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Pull-based static sources"
+
+[dependencies]
+bytes = "1"
+parking_lot = "0.12"
+rmtx-conf = { path = "../rmtx-conf" }
+rmtx-ffmpeg = { path = "../rmtx-ffmpeg" }
+rmtx-path = { path = "../rmtx-path" }
+rmtx-servers-rtsp = { path = "../rmtx-servers-rtsp" }
+rmtx-stream = { path = "../rmtx-stream" }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+rmtx-conf = { path = "../rmtx-conf" }
+tempfile = "3"
+tokio = { workspace = true, features = ["macros", "rt", "time"] }

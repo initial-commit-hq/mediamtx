@@ -1,0 +1,15 @@
+[package]
+name = "rmtx-hooks"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Lifecycle hooks with MediaMTX env contract"
+
+[dependencies]
+parking_lot = "0.12"
+tokio = { workspace = true, features = ["process", "rt", "sync", "time", "macros"] }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["process", "rt", "sync", "time", "macros"] }

@@ -242,14 +242,8 @@ func (t *offlineSubStreamTrack) run() {
 			// Reachable in normal operation, not just in theory. The placeholder
 			// tracks are built from alwaysAvailableTracks, which only permits the
 			// four codecs above -- but RebuildFromDesc replaces that description
-			// with whatever the CAMERA publishes, and cameras publish plenty more.
-			// Lincoln Place (EOS-OR) has an M-JPEG camera and crash-looped 18 times:
-			//
-			//	WAR [path b3344726] source track layout differs from configured
-			//	    alwaysAvailableTracks (wants to publish [M-JPEG Generic] ...)
-			//	panic: should not happen
-			//	  offline_sub_stream_track.go:236
-			//
+			// with whatever the CAMERA publishes, and cameras publish plenty more
+			// (e.g. M-JPEG), which previously triggered panic("should not happen").
 			// The cost of returning is only that this one track goes silent between
 			// camera disconnects, which is exactly what it would have been had the
 			// codec never been listed. The cost of panicking is the node.
