@@ -22,9 +22,10 @@ Phase 0 spec extraction is under [`spec/`](spec/). Phase 1 brought up the binary
 | `rmtx-mux` | MPEG-TS segment builder |
 | `rmtx-record` | Placeholder segments on path ready when `record: yes`; **StreamBus tap** appends media units |
 | `rmtx-servers-rtsp` | Retina PLAY pull → `StreamBus`; listener OPTIONS/DESCRIBE/SETUP/PLAY/TEARDOWN; **TCP interleaved RTP media pump** to PLAY clients |
-| `rmtx-servers-hls` | HTTP HLS; **live segment cache** fed from `StreamLookup` when a path has media (stub TS payloads until real mux) |
+| `rmtx-servers-hls` | HTTP HLS; **live MPEG-TS segments** from StreamBus H.264 (rolling playlist) |
 | `rmtx-servers-rtmp` | RTMP listener via Xiu (`xiu-rtmp` feature); **publish → `on_rtmp_publish`** attaches StreamBus + record tap |
 | `rmtx-servers-webrtc` | WHEP HTTP endpoint; **501** without `webrtc-rs`, **201** SDP answer with `webrtc-rs`; **WHEP subscribe scaffold** logs StreamBus units (RTP send Phase 3) |
+| `rmtx-servers-viewer` | Camera grid GUI on `viewerAddress` (`:9999`); same Nuxt assets as Go `internal/viewerserver` |
 | `rmtx-playback` | Playback HTTP `GET /list` + `GET /get`; **lists/serves `.mp4`/`.ts` under `record_path`** |
 | `rmtx-staticsources` | RTSP PLAY pull via `spawn_configured_sources`; **ffmpeg MPEG-TS pipe** or RTSP republish argv when Retina pull fails |
 | `rmtx-ffmpeg` | Argv-only ffmpeg spawn (`-rtsp_transport tcp -i … -c copy -f rtsp …`); no shell |
@@ -119,6 +120,7 @@ Uses [`testdata/phase1.yml`](testdata/phase1.yml). `smoke-phase1.sh` builds with
 | `rmtx-servers-rtmp` | `internal/servers/rtmp` | RTMP (Xiu-based) |
 | `rmtx-servers-hls` | `internal/servers/hls` | HLS / LL-HLS |
 | `rmtx-servers-webrtc` | `internal/servers/webrtc` | WHIP / WHEP (`webrtc` crate) |
+| `rmtx-servers-viewer` | `internal/viewerserver` | Camera grid GUI (`viewer` / `viewerAddress`) |
 | `rmtx-servers-srt` | `internal/servers/srt` | SRT (FFI/ffmpeg TBD — known gap) |
 | `rmtx-staticsources` | `internal/staticsources` | Pull sources (RTSP/HLS/…) |
 | `rmtx-ffmpeg` | (new) | Per-path ffmpeg fallback subprocess |

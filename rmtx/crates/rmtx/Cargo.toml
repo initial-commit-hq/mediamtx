@@ -20,6 +20,7 @@ rmtx-servers-rtsp = { path = "../rmtx-servers-rtsp" }
 rmtx-servers-rtmp = { path = "../rmtx-servers-rtmp" }
 rmtx-servers-hls = { path = "../rmtx-servers-hls" }
 rmtx-servers-webrtc = { path = "../rmtx-servers-webrtc" }
+rmtx-servers-viewer = { path = "../rmtx-servers-viewer" }
 rmtx-playback = { path = "../rmtx-playback" }
 tokio = { workspace = true }
 tracing = { workspace = true }

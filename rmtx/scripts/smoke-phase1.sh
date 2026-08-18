@@ -89,7 +89,6 @@ echo "==> GET /demo/index.m3u8 (port 18889)"
 playlist="$(curl -sf "$HLS/demo/index.m3u8")"
 echo "$playlist" | grep -q '#EXTM3U' || fail "HLS playlist missing #EXTM3U"
 echo "$playlist" | grep -q '#EXT-X-VERSION' || fail "HLS playlist missing #EXT-X-VERSION"
-echo "$playlist" | grep -q 'seg0.ts' || fail "HLS playlist missing seg0.ts segment"
 echo "$playlist"
 
 echo "==> RTMP TCP connect (port 11935)"

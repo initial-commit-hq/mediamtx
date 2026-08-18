@@ -21,6 +21,7 @@ use rmtx_servers_hls::HlsServer;
 use rmtx_servers_rtmp::RtmpServer;
 use rmtx_servers_rtsp::RtspServer;
 use rmtx_servers_webrtc::WebRtcServer;
+use rmtx_servers_viewer::ViewerServer;
 use rmtx_staticsources::{
     ensure_always_available_shared, spawn_configured_sources, StaticSourceSideTable,
 };
@@ -206,6 +207,23 @@ async fn main() -> ExitCode {
         });
     } else {
         info!("WebRTC server disabled (webrtc: false)");
+    }
+
+    if conf.viewer {
+        let addr = conf.viewer_address.clone();
+        tokio::spawn(async move {
+            match ViewerServer::bind(&addr).await {
+                Ok(server) => {
+                    info!(address = %addr, "viewer enabled");
+                    if let Err(e) = server.run().await {
+                        error!(error = %e, "viewer exited with error");
+                    }
+                }
+                Err(e) => error!(error = %e, address = %addr, "failed to bind viewer"),
+            }
+        });
+    } else {
+        info!("viewer disabled (viewer: false)");
     }
 
     if conf.playback {

@@ -81,11 +81,34 @@ pub enum HlsServerError {
     Serve(std::io::Error),
 }
 
+fn hls_headers(content_type: &'static str) -> [(axum::http::HeaderName, &'static str); 3] {
+    [
+        (header::CONTENT_TYPE, content_type),
+        (header::ACCESS_CONTROL_ALLOW_ORIGIN, "*"),
+        (header::CACHE_CONTROL, "no-cache, no-store, must-revalidate"),
+    ]
+}
+
+async fn hls_options() -> Response {
+    (
+        StatusCode::NO_CONTENT,
+        [
+            (header::ACCESS_CONTROL_ALLOW_ORIGIN, "*"),
+            (header::ACCESS_CONTROL_ALLOW_METHODS, "GET, OPTIONS"),
+            (header::ACCESS_CONTROL_ALLOW_HEADERS, "*"),
+        ],
+    )
+        .into_response()
+}
+
 /// Builds the axum router (exported for unit tests).
 pub fn router(state: HlsState) -> Router {
     Router::new()
-        .route("/{path}/index.m3u8", get(playlist_handler))
-        .route("/{path}/seg0.ts", get(segment_handler))
+        .route(
+            "/{path}/index.m3u8",
+            get(playlist_handler).options(hls_options),
+        )
+        .route("/{path}/{seg}", get(segment_handler).options(hls_options))
         .with_state(state)
 }
 
@@ -97,62 +120,62 @@ async fn playlist_handler(
         return StatusCode::NOT_FOUND.into_response();
     }
 
-    let playlist = if state.cache.get(&path).is_some() {
-        live_playlist()
-    } else {
-        stub_playlist()
-    };
+    let playlist = state
+        .cache
+        .playlist(&path)
+        .unwrap_or_else(empty_live_playlist);
 
     (
         StatusCode::OK,
-        [(header::CONTENT_TYPE, "application/vnd.apple.mpegurl")],
+        hls_headers("application/vnd.apple.mpegurl"),
         playlist,
     )
         .into_response()
 }
 
+fn parse_seg_seq(seg: &str) -> Option<u64> {
+    let name = seg.strip_suffix(".ts")?;
+    let num = name.strip_prefix("seg")?;
+    num.parse().ok()
+}
+
 async fn segment_handler(
     State(state): State<HlsState>,
-    Path(path): Path<String>,
+    Path((path, seg)): Path<(String, String)>,
 ) -> Response {
     if state.paths.get(&path).is_err() {
         return StatusCode::NOT_FOUND.into_response();
     }
-
-    let body = state
-        .cache
-        .get(&path)
-        .unwrap_or_else(stub_ts_segment);
+    let Some(seq) = parse_seg_seq(&seg) else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let Some(body) = state.cache.get_segment(&path, seq) else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
 
     (
         StatusCode::OK,
-        [(header::CONTENT_TYPE, "video/mp2t")],
+        hls_headers("video/mp2t"),
         body,
     )
         .into_response()
 }
 
-/// Sliding-window style playlist when media cache is active.
-pub fn live_playlist() -> String {
+/// Live playlist with no segments yet (hls.js will poll).
+pub fn empty_live_playlist() -> String {
     "#EXTM3U\n\
      #EXT-X-VERSION:3\n\
      #EXT-X-TARGETDURATION:2\n\
-     #EXTINF:2.0,\n\
-     seg0.ts\n"
+     #EXT-X-MEDIA-SEQUENCE:0\n"
         .to_owned()
 }
 
-/// Minimal VOD-style stub playlist with one fake segment.
+/// Backward-compatible alias used by older tests / smoke checks.
 pub fn stub_playlist() -> String {
-    "#EXTM3U\n\
-     #EXT-X-VERSION:3\n\
-     #EXTINF:2.0,\n\
-     seg0.ts\n\
-     #EXT-X-ENDLIST\n"
-        .to_owned()
+    empty_live_playlist()
 }
 
-/// Single 188-byte MPEG-TS null packet (sync byte 0x47).
+/// Dummy 188-byte MPEG-TS null packet.
 pub fn stub_ts_segment() -> Vec<u8> {
     let mut packet = vec![0u8; 188];
     packet[0] = 0x47;
@@ -176,7 +199,8 @@ mod tests {
         let body = stub_playlist();
         assert!(body.contains("#EXTM3U"));
         assert!(body.contains("#EXT-X-VERSION:3"));
-        assert!(body.contains("seg0.ts"));
+        assert!(body.contains("#EXT-X-MEDIA-SEQUENCE"));
+        assert!(!body.contains("#EXT-X-ENDLIST"));
     }
 
     #[test]
@@ -219,7 +243,7 @@ mod tests {
         let body = response.into_body().collect().await.unwrap().to_bytes();
         let text = String::from_utf8(body.to_vec()).unwrap();
         assert!(text.contains("#EXTM3U"));
-        assert!(text.contains("seg0.ts"));
+        assert!(text.contains("#EXT-X-MEDIA-SEQUENCE"));
     }
 
     #[tokio::test]
@@ -245,7 +269,9 @@ mod tests {
 
     #[tokio::test]
     async fn segment_known_path_oneshot() {
-        let app = router(test_state());
+        let state = test_state();
+        state.cache.push("demo", 1.0, stub_ts_segment());
+        let app = router(state);
 
         let response = app
             .oneshot(
@@ -288,6 +314,5 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
         let text = response.text().await.unwrap();
         assert!(text.contains("#EXTM3U"));
-        assert!(text.contains("seg0.ts"));
     }
 }

@@ -45,9 +45,11 @@ pub async fn serve(addr: SocketAddr, state: AppState) -> Result<(), ServeError> 
 }
 
 /// Parse a listen address like `:9997` into a [`SocketAddr`].
+///
+/// Bare `:port` forms bind `0.0.0.0` (MediaMTX-compatible, reachable on LAN).
 pub fn parse_listen_addr(addr: &str) -> Result<SocketAddr, ServeError> {
-    let normalized = if addr.starts_with(':') {
-        format!("127.0.0.1{addr}")
+    let normalized = if let Some(port) = addr.strip_prefix(':') {
+        format!("0.0.0.0:{port}")
     } else {
         addr.to_owned()
     };

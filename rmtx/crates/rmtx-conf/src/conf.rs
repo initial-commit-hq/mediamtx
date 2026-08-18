@@ -37,6 +37,10 @@ pub struct Conf {
     pub auth_jwt_audience: String,
 
     #[serde(deserialize_with = "crate::bool_yaml::deserialize")]
+    pub viewer: bool,
+    pub viewer_address: String,
+
+    #[serde(deserialize_with = "crate::bool_yaml::deserialize")]
     pub api: bool,
     pub api_address: String,
 
@@ -81,6 +85,8 @@ impl Default for Conf {
             auth_jwt_claim_key: "mediamtx_permissions".to_owned(),
             auth_jwt_issuer: String::new(),
             auth_jwt_audience: String::new(),
+            viewer: false,
+            viewer_address: ":9999".to_owned(),
             api: false,
             api_address: ":9997".to_owned(),
             rtsp: true,
@@ -116,6 +122,9 @@ impl Conf {
     }
 
     fn normalize(&mut self) {
+        if self.viewer_address.is_empty() {
+            self.viewer_address = ":9999".to_owned();
+        }
         for (name, path) in &mut self.paths {
             path.name.clone_from(name);
         }
@@ -134,6 +143,8 @@ mod tests {
     #[test]
     fn default_values_match_go_baseline() {
         let conf = Conf::default();
+        assert_eq!(conf.viewer, false);
+        assert_eq!(conf.viewer_address, ":9999");
         assert_eq!(conf.api, false);
         assert_eq!(conf.api_address, ":9997");
         assert_eq!(conf.rtsp, true);

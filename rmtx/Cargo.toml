@@ -15,6 +15,7 @@ members = [
     "crates/rmtx-servers-rtmp",
     "crates/rmtx-servers-hls",
     "crates/rmtx-servers-webrtc",
+    "crates/rmtx-servers-viewer",
     "crates/rmtx-servers-srt",
     "crates/rmtx-staticsources",
     "crates/rmtx-ffmpeg",

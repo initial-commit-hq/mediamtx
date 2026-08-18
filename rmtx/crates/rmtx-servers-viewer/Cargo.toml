@@ -1,0 +1,19 @@
+[package]
+name = "rmtx-servers-viewer"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Camera grid viewer (embedded GUI)"
+
+[dependencies]
+axum = { workspace = true }
+mime_guess = "2"
+rust-embed = "8"
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+http-body-util = "0.1"
+tower = { version = "0.5", features = ["util"] }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
